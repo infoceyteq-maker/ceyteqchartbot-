@@ -269,7 +269,7 @@ export class WebhookController extends EventController {
 
       const headers = {
         'Content-Type': 'application/json',
-        'User-Agent': 'Evolution-API-Webhook',
+        'User-Agent': 'Ceyteq-API-Webhook',
         ...webhookConfig.headers,
       };
 

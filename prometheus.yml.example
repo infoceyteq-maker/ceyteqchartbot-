@@ -58,7 +58,7 @@ alerting:
 #           description: "Ceyteq API has been down for more than 1 minute."
 #       
 #       - alert: CeyteqInstanceDown
-#         expr: evolution_instance_up == 0
+#         expr: ceyteq_instance_up == 0
 #         for: 2m
 #         labels:
 #           severity: warning
@@ -67,7 +67,7 @@ alerting:
 #           description: "Instance {{ $labels.instance }} has been down for more than 2 minutes."
 #       
 #       - alert: HighInstanceCount
-#         expr: evolution_instances_total > 100
+#         expr: ceyteq_instances_total > 100
 #         for: 5m
 #         labels:
 #           severity: warning

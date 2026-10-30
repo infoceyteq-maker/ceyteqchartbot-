@@ -17,6 +17,8 @@ function cleanEnv() {
   for (const key of [
     'DATABASE_URL',
     'DATABASE_CONNECTION_URI',
+    'DATABASE_BOUNCER_CONNECTION_URI',
+    'SHADOW_DATABASE_URL',
     'DATABASE_PROVIDER',
     'SERVER_PORT',
     'PORT',
@@ -156,4 +158,92 @@ test('db:push selects the configured provider schema and forwards the database a
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test('the default Prisma schema mirrors the complete TiDB/MySQL schema', () => {
+  const mysqlSchema = fs.readFileSync(path.join(root, 'prisma', 'mysql-schema.prisma'), 'utf8').replace(/\r\n/g, '\n');
+  const defaultSchema = fs.readFileSync(path.join(root, 'prisma', 'schema.prisma'), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(defaultSchema, mysqlSchema, 'Run npm run db:sync-schema after updating the MySQL schema.');
+  assert.match(defaultSchema, /provider\s*=\s*"mysql"/);
+  assert.match(defaultSchema, /binaryTargets\s*=\s*\["native", "debian-openssl-3\.0\.x"\]/);
+  assert.match(defaultSchema, /model Instance\s*\{/);
+  assert.match(defaultSchema, /model Message\s*\{/);
+});
+
+test('direct Prisma CLI selects the provider schema and loads DATABASE_URL from .env', () => {
+  const cwd = isolatedDir();
+  try {
+    // Static schema validation uses placeholder engine paths: this does not
+    // start an engine, connect to TiDB, or validate its runtime compatibility.
+    const env = {
+      ...cleanEnv(),
+      PRISMA_SCHEMA_ENGINE_BINARY: process.execPath,
+      PRISMA_QUERY_ENGINE_LIBRARY: process.execPath,
+    };
+    delete env.DATABASE_PROVIDER;
+    fs.writeFileSync(path.join(cwd, '.env'), `DATABASE_URL="${fakeUrl}"\n`);
+    const prismaCli = path.join(root, 'node_modules', 'prisma', 'build', 'index.js');
+    const config = path.join(root, 'prisma.config.ts');
+    const result = spawnSync(process.execPath, [prismaCli, 'validate', '--config', config], {
+      cwd,
+      env,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /prisma[\\/]schema\.prisma/);
+    assert.match(result.stdout, /schema .* valid/i);
+
+    const postgres = spawnSync(process.execPath, [prismaCli, 'validate', '--config', config], {
+      cwd,
+      env: { ...env, DATABASE_PROVIDER: 'postgresql', DATABASE_URL: 'postgresql://user:pass@localhost:5432/ceyteq' },
+      encoding: 'utf8',
+    });
+    assert.equal(postgres.status, 0, postgres.stderr || postgres.stdout);
+    assert.match(postgres.stdout, /prisma[\\/]postgresql-schema\.prisma/);
+
+    const explicitSchema = spawnSync(
+      process.execPath,
+      [prismaCli, 'validate', '--config', config, '--schema', path.join(root, 'prisma', 'mysql-schema.prisma')],
+      { cwd, env: { ...env, DATABASE_PROVIDER: 'postgresql', DATABASE_URL: fakeUrl }, encoding: 'utf8' },
+    );
+    assert.equal(explicitSchema.status, 0, explicitSchema.stderr || explicitSchema.stdout);
+    assert.match(explicitSchema.stdout, /prisma[\\/]mysql-schema\.prisma/);
+
+    const invalid = spawnSync(process.execPath, [prismaCli, 'validate', '--config', config], {
+      cwd,
+      env: { ...env, DATABASE_PROVIDER: 'unsupported' },
+      encoding: 'utf8',
+    });
+    assert.notEqual(invalid.status, 0);
+    assert.match(invalid.stderr, /DATABASE_PROVIDER must be mysql, postgresql, or psql_bouncer/);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('the direct Prisma config retains canonical connection precedence', () => {
+  const cwd = isolatedDir();
+  try {
+    const env = { ...cleanEnv(), DATABASE_URL: fakeUrl, DATABASE_CONNECTION_URI: oldUrl };
+    const fixture = path.join(root, 'tests', 'fixtures', 'print-prisma-config.ts');
+    const result = run(process.execPath, [require.resolve('tsx/cli'), fixture], { cwd, env });
+    assert.equal(result.connectionUri, oldUrl);
+    assert.equal(result.schema, 'prisma/schema.prisma');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('the example environment uses branded namespaces without real credentials', () => {
+  const values = require('dotenv').parse(fs.readFileSync(path.join(root, '.env.example')));
+  assert.equal(values.SERVER_NAME, 'ceyteq');
+  assert.equal(values.DATABASE_PROVIDER, 'mysql');
+  assert.match(values.DATABASE_URL, /^mysql:\/\/USER:PASSWORD@HOST:4000\/ceyteq\?sslaccept=strict$/);
+  assert.equal(values.DATABASE_CONNECTION_CLIENT_NAME, 'ceyteq');
+  assert.equal(values.PROVIDER_ENABLED, 'false');
+  assert.equal(values.PROVIDER_PREFIX, 'ceyteq');
+  assert.equal(values.NATS_ENABLED, 'false');
+  assert.equal(values.NATS_EXCHANGE_NAME, 'ceyteq');
+  assert.equal(values.KAFKA_TOPIC_PREFIX, 'ceyteq');
+  assert.equal(values.GLOBAL_API_KEY, 'replace-with-a-strong-random-api-key');
 });

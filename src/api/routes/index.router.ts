@@ -8,6 +8,7 @@ import { StorageRouter } from '@api/integrations/storage/storage.router';
 import { waMonitor } from '@api/server.module';
 import { configService, Database, Facebook } from '@config/env.config';
 import { fetchLatestWaWebVersion } from '@utils/fetchLatestWaWebVersion';
+import { renderPrometheusMetrics } from '@utils/prometheus-metrics';
 import { NextFunction, Request, Response, Router } from 'express';
 import fs from 'fs';
 
@@ -100,56 +101,19 @@ if (metricsConfig.ENABLED) {
     res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
 
-    const escapeLabel = (value: unknown) =>
-      String(value ?? '')
-        .replace(/\\/g, '\\\\')
-        .replace(/\n/g, '\\n')
-        .replace(/"/g, '\\"');
-
-    const lines: string[] = [];
-
-    const clientName = databaseConfig.CONNECTION.CLIENT_NAME || 'unknown';
-    const serverUrl = serverConfig.URL || '';
-
-    // environment info
-    lines.push('# HELP evolution_environment_info Environment information');
-    lines.push('# TYPE evolution_environment_info gauge');
-    lines.push(
-      `evolution_environment_info{version="${escapeLabel(packageJson.version)}",clientName="${escapeLabel(
-        clientName,
-      )}",serverUrl="${escapeLabel(serverUrl)}"} 1`,
+    const instanceEntries = Object.entries((waMonitor && waMonitor.waInstances) || {});
+    res.send(
+      renderPrometheusMetrics({
+        version: packageJson.version,
+        clientName: databaseConfig.CONNECTION.CLIENT_NAME || 'unknown',
+        serverUrl: serverConfig.URL || '',
+        instances: instanceEntries.map(([name, instance]) => ({
+          name,
+          state: instance?.connectionStatus?.state || 'unknown',
+          integration: instance?.integration || '',
+        })),
+      }),
     );
-
-    const instances = (waMonitor && waMonitor.waInstances) || {};
-    const instanceEntries = Object.entries(instances);
-
-    // total instances
-    lines.push('# HELP evolution_instances_total Total number of instances');
-    lines.push('# TYPE evolution_instances_total gauge');
-    lines.push(`evolution_instances_total ${instanceEntries.length}`);
-
-    // per-instance status
-    lines.push('# HELP evolution_instance_up 1 if instance state is open, else 0');
-    lines.push('# TYPE evolution_instance_up gauge');
-    lines.push('# HELP evolution_instance_state Instance state as a labelled metric');
-    lines.push('# TYPE evolution_instance_state gauge');
-
-    for (const [name, instance] of instanceEntries) {
-      const state = instance?.connectionStatus?.state || 'unknown';
-      const integration = instance?.integration || '';
-      const up = state === 'open' ? 1 : 0;
-
-      lines.push(
-        `evolution_instance_up{instance="${escapeLabel(name)}",integration="${escapeLabel(integration)}"} ${up}`,
-      );
-      lines.push(
-        `evolution_instance_state{instance="${escapeLabel(name)}",integration="${escapeLabel(
-          integration,
-        )}",state="${escapeLabel(state)}"} 1`,
-      );
-    }
-
-    res.send(lines.join('\n') + '\n');
   });
 }
 

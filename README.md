@@ -44,7 +44,7 @@ Prerequisites: Node.js 22, npm, a TiDB cluster or MySQL 8-compatible database, a
    GLOBAL_API_KEY=replace-with-a-strong-random-api-key
    ```
 
-   The existing `DATABASE_CONNECTION_URI`, `SERVER_PORT`, and `AUTHENTICATION_API_KEY` names remain supported and **take precedence** over `DATABASE_URL`, `PORT`, and `GLOBAL_API_KEY`, respectively, when both are non-empty. Remove an old setting if you intend to use its new alias instead. The `npm run db:*` commands map `DATABASE_URL` for Prisma; if invoking the Prisma CLI directly, use `DATABASE_CONNECTION_URI`, which is still named in the Prisma schemas.
+   The existing `DATABASE_CONNECTION_URI`, `SERVER_PORT`, and `AUTHENTICATION_API_KEY` names remain supported and **take precedence** over `DATABASE_URL`, `PORT`, and `GLOBAL_API_KEY`, respectively, when both are non-empty. Remove an old setting if you intend to use its new alias instead. The backend, `npm run db:*` commands, and `prisma.config.ts` map `DATABASE_URL` to the existing `DATABASE_CONNECTION_URI` expected by the schemas. Direct `npx prisma` commands run from the repository root load `.env` and select the schema using `DATABASE_PROVIDER` (default `mysql`).
 
    Percent-encode special characters in the username and password. For a cluster requiring a specific CA, add `&sslcert=/path/to/ca.pem` to the connection URL and make the certificate available to the API process/container. Consult [TiDB's Prisma connection guide](https://docs.pingcap.com/tidb/stable/dev-guide-sample-application-nodejs-prisma/) for the correct TLS settings for your cluster. Do not disable certificate verification in production.
 
@@ -53,9 +53,9 @@ Prerequisites: Node.js 22, npm, a TiDB cluster or MySQL 8-compatible database, a
 4. Generate the Prisma client, then choose **one** database setup path after reviewing the schema and backing up any existing data:
 
    ```bash
-   npm run db:generate
+   npx prisma generate
    # For a new, disposable development database, optionally use schema push:
-   npm run db:push
+   npx prisma db push
    # OR, for a migration-managed database, use the reviewed migration history:
    # npm run db:deploy
    npm run dev:server
@@ -63,9 +63,11 @@ Prerequisites: Node.js 22, npm, a TiDB cluster or MySQL 8-compatible database, a
    npm --prefix frontend run dev
    ```
 
-   `db:push` synchronizes the complete provider-specific schema but does not create migration history. It can modify existing tables and should be reviewed on a disposable TiDB instance first; do not pass `--accept-data-loss` without a backup and an explicit data-loss review. Do not run `migrate dev` immediately after `db:push`: schema drift may prompt a reset. `migrate dev` is a separate development-only option that requires a suitable shadow database; production migration histories must be reconciled or baselined deliberately.
+   `npm run db:generate` and `npm run db:push` are equivalent provider-aware wrappers. The complete TiDB/MySQL schema lives in `prisma/mysql-schema.prisma`; `prisma/schema.prisma` is a byte-for-byte mirror for standard Prisma CLI use. After editing the MySQL schema, run `npm run db:sync-schema` and commit both files. PostgreSQL and pooled PostgreSQL retain their own schemas.
 
-   Open `http://localhost:3000`, choose **Connect your workspace**, and enter the global API key. Until then the charts and contacts are illustrative and cannot send real messages. Create a WhatsApp channel and scan its QR code under **Channels**. Your WhatsApp device and messaging provider must be available for a real connection.
+   `db push` synchronizes the complete provider-specific schema but does not create migration history. It can modify existing tables and should be reviewed on a disposable TiDB instance first; do not pass `--accept-data-loss` without a backup and an explicit data-loss review. Do not run `migrate dev` immediately after `db push`: schema drift may prompt a reset. For a separate migration-managed development workflow with a suitable shadow database, use `npm run db:migrate:dev` (enter `ceyteq_init` when prompted for a new migration name). This wrapper selects the existing provider-specific migration history; a bare `npx prisma migrate dev` does not. Production migration histories must be reconciled or baselined deliberately.
+
+   Open `http://localhost:3000` to see the Ceyteq control screen. **Open workspace** takes you to the existing overview at `/workspace`; choose **Connect your workspace** and enter the global API key. **Initialize Ceyteq Node** opens the Channels screen, and **Network Configurations** opens workspace connection settings. The status indicator checks only whether the authenticated Ceyteq API responds; it does not establish WhatsApp channel or database health. Until you connect, the charts and contacts in the workspace are illustrative and cannot send real messages. Create a WhatsApp channel and scan its QR code under **Channels**. Your WhatsApp device and messaging provider must be available for a real connection.
 
 ### Docker Compose
 
@@ -87,6 +89,7 @@ The frontend is available on port 3000; the API is bound to `127.0.0.1:8080` on 
 - Browse recent saved conversations and contacts, and send text messages through a selected channel.
 - Read and update per-channel webhooks while retaining existing webhook headers and events not edited in the UI (disabling a webhook clears its events).
 - Contact information and Ceyteq social links. Other backend integrations remain configurable through the API; the workspace does not yet configure every integration or support every API operation.
+- Optional Prometheus metrics use `ceyteq_*` names; matching `evolution_*` aliases remain available for existing dashboards.
 
 The API uses API keys rather than application user accounts. A global key grants broad administrative access; use only on trusted devices, avoid public/shared computers, restrict ingress, and terminate HTTPS at a trusted reverse proxy. The workspace session lasts 12 hours and is encrypted and HTTP-only; disconnect to remove it. No API key or database credential is shipped to the browser in JavaScript. The backend has existing privileged endpoints and should not be exposed directly to untrusted traffic. Telemetry is disabled by default; if enabled, an explicit `TELEMETRY_URL` is required and no upstream endpoint is used automatically.
 

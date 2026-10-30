@@ -1,8 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Ceyteq's authoritative MySQL/TiDB schema is prisma/mysql-schema.prisma.
+// prisma/schema.prisma is its CLI-compatible mirror; after changes run
+// `npm run db:sync-schema` and commit both files. The complete existing models
+// and table names are retained for API and migration compatibility.
 
 generator client {
   provider      = "prisma-client-js"

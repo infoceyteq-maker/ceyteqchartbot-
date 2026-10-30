@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   allowedDevOrigins: ['localhost', '127.0.0.1', '*.e2b.app'],
   poweredByHeader: false,
+  devIndicators: false,
 };
 
 export default nextConfig;
