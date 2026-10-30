@@ -4,20 +4,20 @@ services:
   redis:
     image: redis:latest
     networks:
-      - evolution-net
+      - ceyteq-net
     container_name: redis
     command: >
       redis-server --port 6379 --appendonly yes
     volumes:
-      - evolution_redis:/data
+      - ceyteq_redis:/data
     ports:
-      - 6379:6379
+      - "127.0.0.1:6379:6379"
 
 volumes:
-  evolution_redis:
+  ceyteq_redis:
 
 
 networks:
-  evolution-net:
-    name: evolution-net
+  ceyteq-net:
+    name: ceyteq-net
     driver: bridge

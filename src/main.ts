@@ -81,7 +81,7 @@ async function bootstrap() {
           const tzoffset = new Date().getTimezoneOffset() * 60000; //offset in milliseconds
           const localISOTime = new Date(Date.now() - tzoffset).toISOString();
           const now = localISOTime;
-          const globalApiKey = configService.get<Auth>('AUTHENTICATION').API_KEY.KEY;
+          const auth = configService.get<Auth>('AUTHENTICATION');
           const serverUrl = configService.get<HttpServer>('SERVER').URL;
 
           const errorData = {
@@ -95,7 +95,7 @@ async function bootstrap() {
               },
             },
             date_time: now,
-            api_key: globalApiKey,
+            ...(auth.EXPOSE_IN_FETCH_INSTANCES ? { api_key: auth.API_KEY.KEY } : {}),
             server_url: serverUrl,
           };
 

@@ -5,14 +5,17 @@ const { existsSync } = require('fs');
 dotenv.config();
 
 const { DATABASE_PROVIDER } = process.env;
-const databaseProviderDefault = DATABASE_PROVIDER ?? 'postgresql';
+const databaseProviderDefault = DATABASE_PROVIDER ?? 'mysql';
+if (!['mysql', 'postgresql', 'psql_bouncer'].includes(databaseProviderDefault)) {
+  console.error('DATABASE_PROVIDER must be mysql, postgresql, or psql_bouncer.');
+  process.exit(1);
+}
 
 if (!DATABASE_PROVIDER) {
   console.warn(`DATABASE_PROVIDER is not set in the .env file, using default: ${databaseProviderDefault}`);
 }
 
-// Função para determinar qual pasta de migrations usar
-// Função para determinar qual pasta de migrations usar
+// Map the psql_bouncer client to the PostgreSQL migration history.
 function getMigrationsFolder(provider) {
   switch (provider) {
     case 'psql_bouncer':

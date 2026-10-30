@@ -1,224 +1,104 @@
-<p align="center">
-  <a href="https://evolutionfoundation.com.br">
-    <img src="./public/hover-evolution.png" alt="Evolution Foundation" />
-  </a>
-</p>
+# Ceyteq (Ceylon Technology)
 
-<h1 align="center">Evolution API</h1>
+A messaging and automation workspace: a Next.js dashboard backed by a TypeScript/Express API, Prisma, and a MySQL-compatible database such as TiDB. The dashboard starts in a clearly labelled **sample workspace**; connect it with your own API key to manage real channels and messages.
 
-<p align="center">
-  Open-source REST API for WhatsApp and multi-channel messaging — part of the Evolution Foundation ecosystem.
-</p>
+![Ceyteq mark](public/images/ceyteq-mark.svg)
 
-<p align="center">
-  <a href="https://github.com/evolution-foundation/evolution-api/releases/latest"><img src="https://img.shields.io/github/v/release/evolution-foundation/evolution-api?include_prereleases&label=version&color=00ffa7" alt="Latest version" /></a>
-  <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0" /></a>
-  <a href="https://docs.evolutionfoundation.com.br"><img src="https://img.shields.io/badge/Docs-evolutionfoundation.com.br-00ffa7" alt="Documentation" /></a>
-  <a href="https://evolutionfoundation.com.br/community"><img src="https://img.shields.io/badge/Community-Join%20us-white" alt="Community" /></a>
-  <a href="https://hub.docker.com/r/evoapicloud/evolution-api"><img src="https://img.shields.io/badge/Docker-evoapicloud-blue" alt="Docker image" /></a>
-</p>
+## Architecture at a glance
 
-<p align="center">
-  <a href="https://evolutionfoundation.com.br">Website</a> &middot;
-  <a href="https://docs.evolutionfoundation.com.br">Documentation</a> &middot;
-  <a href="https://evolutionfoundation.com.br/community">Community</a> &middot;
-  <a href="mailto:suporte@evofoundation.com.br">Support</a>
-</p>
+```text
+Browser ── same-origin requests ──> Next.js workspace (frontend/)
+                                      │ encrypted HTTP-only session
+                                      │ server-side, allow-listed API proxy
+                                      ▼
+                                  Ceyteq Express API (src/)
+                                      ├── Prisma ──> TiDB / MySQL
+                                      ├── WhatsApp Web (Baileys) / Meta Business API
+                                      ├── chatbot and event integrations
+                                      └── optional Redis / S3-compatible storage
+```
 
----
+The frontend never connects directly to TiDB. It uses the existing API contracts; the backend owns the database connection. See [the architecture review](docs/ARCHITECTURE.md) for a file map, compatibility risks, migrations, security boundaries and remaining validation work.
 
-## About
+## Quick start
 
-**Evolution API** is a powerful, production-ready REST API for WhatsApp and multi-channel messaging. Originally focused on WhatsApp, it has grown into a comprehensive platform supporting multiple messaging providers and integrations.
+Prerequisites: Node.js 22, npm, a TiDB cluster or MySQL 8-compatible database, and a way to reach the database from the API server. A TiDB Cloud public endpoint requires TLS. The upstream project’s MySQL migrations contain foreign keys and multiple DDL changes; **test them on a disposable cluster compatible with your TiDB version before applying them to production**. Back up existing databases first.
 
-Today, Evolution API supports both the Baileys-based WhatsApp Web API and the official WhatsApp Cloud API, plus integrations with Typebot, Chatwoot, Dify, OpenAI, RabbitMQ, Apache Kafka, Amazon SQS, Socket.io, Amazon S3 / MinIO, and more.
+1. Install the two applications:
 
-Evolution API began as a WhatsApp controller API based on [CodeChat](https://github.com/code-chat-br/whatsapp-api), which in turn implemented the [Baileys](https://github.com/WhiskeySockets/Baileys) library. We continue to acknowledge CodeChat for laying the groundwork.
+   ```bash
+   npm ci
+   npm --prefix frontend ci
+   cp .env.example .env
+   cp frontend/.env.example frontend/.env.local
+   ```
 
-## Part of the Evolution Foundation ecosystem
+2. In `.env`, set `DATABASE_PROVIDER=mysql`, a real `DATABASE_CONNECTION_URI`, a strong unique `AUTHENTICATION_API_KEY`, and a random `CEYTEQ_SESSION_SECRET` (at least 32 characters; for example, generate one with `openssl rand -hex 32`). Never commit these secrets. Set `SERVER_URL` to the public backend URL if using webhooks/QR code integrations. Keep the existing `DATABASE_CONNECTION_CLIENT_NAME` when upgrading an existing installation, or its instances will not be listed.
 
-Evolution API is one of the messaging engines maintained by Evolution Foundation. It is used as a WhatsApp provider by the [Evo CRM Community](https://github.com/evolution-foundation/evo-crm-community) and other projects in the ecosystem.
+   ```dotenv
+   DATABASE_PROVIDER=mysql
+   DATABASE_CONNECTION_URI='mysql://USER:PASSWORD@HOST:4000/ceyteq?sslaccept=strict'
+   DATABASE_CONNECTION_CLIENT_NAME=ceyteq
+   AUTHENTICATION_API_KEY=replace-with-a-strong-random-api-key
+   ```
 
----
+   Percent-encode special characters in the username and password. For a cluster requiring a specific CA, add `&sslcert=/path/to/ca.pem` to the connection URL and make the certificate available to the API process/container. Consult [TiDB's Prisma connection guide](https://docs.pingcap.com/tidb/stable/dev-guide-sample-application-nodejs-prisma/) for the correct TLS settings for your cluster. Do not disable certificate verification in production.
 
-## Connection Types
+3. In `frontend/.env.local`, set `CEYTEQ_API_URL` to the **server-side** API address (`http://127.0.0.1:8080` for a local API) and set a separate strong `CEYTEQ_SESSION_SECRET`. The secret may match the one in the root `.env` for Docker Compose, but it must not be a committed placeholder. This address is never used by the browser. For multiple frontend replicas, use the same secret on each replica.
 
-Evolution API supports multiple connection types to WhatsApp:
+4. Generate the Prisma client and, after reviewing the migration history, apply it:
 
-### WhatsApp API — Baileys
-A free API based on WhatsApp Web, leveraging the [Baileys library](https://github.com/WhiskeySockets/Baileys). Suitable for multi-service chats, service bots, and WhatsApp-integrated systems. Note: this method relies on the web version of WhatsApp and may have limitations compared to official APIs.
+   ```bash
+   npm run db:generate
+   npm run db:deploy
+   npm run dev:server
+   # In a second terminal:
+   npm --prefix frontend run dev
+   ```
 
-### WhatsApp Cloud API
-The official API provided by Meta. Designed for businesses with higher messaging volumes and stronger integration support, including end-to-end encryption, advanced analytics, and customer service tools. Requires compliance with Meta's policies and may incur per-message costs.
+   Open `http://localhost:3000`, choose **Connect your workspace**, and enter the global API key. Until then the charts and contacts are illustrative and cannot send real messages. Create a WhatsApp channel and scan its QR code under **Channels**. Your WhatsApp device and messaging provider must be available for a real connection.
 
----
+### Docker Compose
 
-## Integrations
-
-Evolution API integrates natively with many platforms:
-
-- **[Typebot](https://typebot.io/)** — conversational bots with trigger management
-- **[Chatwoot](https://www.chatwoot.com/)** — customer service platform
-- **[RabbitMQ](https://www.rabbitmq.com/)** — event streaming via AMQP
-- **[Apache Kafka](https://kafka.apache.org/)** — real-time event streaming and processing
-- **[Amazon SQS](https://aws.amazon.com/sqs/)** — cloud-based message queuing
-- **[Socket.io](https://socket.io/)** — real-time WebSocket events
-- **[Dify](https://dify.ai/)** — AI agent workflows
-- **[OpenAI](https://openai.com/)** — AI capabilities including audio-to-text conversion
-- **Amazon S3 / [MinIO](https://min.io/)** — media file storage
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- **Node.js** 20+
-- **PostgreSQL** or **MySQL**
-- **Redis** (recommended for caching)
-
-### Installation
+Set the root `.env` values described above, including `CEYTEQ_SESSION_SECRET`. Then:
 
 ```bash
-git clone git@github.com:evolution-foundation/evolution-api.git
-cd evolution-api
-
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your database, Redis, and API key
+# Review migrations and verify the database first. This command modifies it.
+docker compose build
+docker compose run --rm api npm run db:deploy
+docker compose up -d
 ```
 
-### Database setup
+The frontend is available on port 3000; the API is bound to `127.0.0.1:8080` on the host and reachable by the frontend over the Compose network. The frontend contacts `http://api:8080` on the server side. Migrations are **not** automatically run on startup unless `RUN_DATABASE_MIGRATIONS=true` is explicitly set. The stack expects an external TiDB/MySQL server; it does not provision TiDB. Put an HTTPS reverse proxy and an access-control layer in front of the frontend for production. Protect the API separately from public access.
 
-```bash
-# Set the database provider
-export DATABASE_PROVIDER=postgresql  # or mysql
+## Workspace features
 
-# Generate Prisma client
-npm run db:generate
+- Overview with all-time channel counts and a seven-day activity chart based on the selected channel’s latest 500 saved messages.
+- Create, connect and delete WhatsApp Web channels; view a connection QR code.
+- Browse recent saved conversations and contacts, and send text messages through a selected channel.
+- Read and update per-channel webhooks while retaining existing webhook headers and events not edited in the UI (disabling a webhook clears its events).
+- Contact information and Ceyteq social links. Other backend integrations remain configurable through the API; the workspace does not yet configure every integration or support every API operation.
 
-# Deploy migrations
-npm run db:deploy
-```
+The API uses API keys rather than application user accounts. A global key grants broad administrative access; use only on trusted devices, avoid public/shared computers, restrict ingress, and terminate HTTPS at a trusted reverse proxy. The workspace session lasts 12 hours and is encrypted and HTTP-only; disconnect to remove it. No API key or database credential is shipped to the browser in JavaScript. The backend has existing privileged endpoints and should not be exposed directly to untrusted traffic. Telemetry is disabled by default; if enabled, an explicit `TELEMETRY_URL` is required and no upstream endpoint is used automatically.
 
-### Running
+## Contact Ceyteq
 
-```bash
-# Development with hot reload
-npm run dev:server
+| Channel | Details |
+| --- | --- |
+| Hotline / WhatsApp | [+94 78 860 7143](https://wa.me/94788607143) |
+| Mobile | [+94 76 860 7143](tel:+94768607143) |
+| Email | [info.ceyteq@gmail.com](mailto:info.ceyteq@gmail.com) |
+| Website | [ceyteq.online](http://ceyteq.online/) |
+| Facebook | [Ceyteq on Facebook](https://www.facebook.com/share/1KM2kZvaCC/) |
+| Instagram | [@ceyteq](https://www.instagram.com/ceyteq/) |
+| LinkedIn | [Ceylon Technology](https://www.linkedin.com/in/ceylon-technology) |
+| TikTok | [@ceyteq](https://www.tiktok.com/@ceyteq?lang=en-GB) |
+| YouTube | [Ceylon Technology](https://youtube.com/@ceylontechnology-ceyteq?si=a4L-B_OZjvhjO7sw) |
+| Pinterest | [infoceyteq](https://www.pinterest.com/infoceyteq/) |
+| X (Twitter) | [@CeylonTech22598](https://x.com/CeylonTech22598) |
 
-# Production build and run
-npm run build
-npm run start:prod
-```
+## License and attribution
 
-### Docker
+Ceyteq is a modified distribution using the Evolution API backend. The original [LICENSE](LICENSE), [NOTICE](NOTICE), and [TRADEMARKS.md](TRADEMARKS.md) are retained, including upstream copyright and attribution. The repository’s license file states additional conditions, including a usage-notification requirement; review those terms and seek appropriate legal advice or permission before commercial deployment or redistribution. The new frontend does not reuse the upstream manager’s visual assets. Upstream release history is preserved in [CHANGELOG.md](CHANGELOG.md) as historical provenance, not as a Ceyteq release record.
 
-```bash
-docker pull evoapicloud/evolution-api:latest
-docker run -p 8080:8080 --env-file .env evoapicloud/evolution-api:latest
-```
-
----
-
-## Architecture
-
-Evolution API is built with a multi-provider, event-driven architecture:
-
-```
-Client / CRM
-     ↓
-Evolution API
-  ├── Channel Integrations (Baileys / Cloud API)
-  ├── Chatbot Integrations (Typebot, Chatwoot, OpenAI, Dify, Flowise, N8N)
-  ├── Event Integrations (WebSocket, RabbitMQ, SQS, NATS, Pusher)
-  └── Storage Integrations (S3, MinIO)
-```
-
-Built with **Node.js 20+**, **TypeScript 5+**, and **Express.js**, it provides extensive integrations with chatbots, CRM systems, and messaging platforms.
-
-### Multi-database support
-PostgreSQL and MySQL via Prisma ORM with provider-specific schemas and migrations.
-
-### Authentication
-- API key-based authentication via `apikey` header
-- Instance-specific tokens for WhatsApp connection authentication
-- Webhook signature validation for external integrations
-
-### Message queue support
-RabbitMQ, Amazon SQS, NATS, Pusher and WebSocket for events. Configurable per instance.
-
-### Media handling
-Local storage or S3/MinIO. Automatic media download from WhatsApp. Optional audio transcription via OpenAI.
-
----
-
-## Documentation
-
-| Resource | Link |
-|---|---|
-| Website | [evolutionfoundation.com.br](https://evolutionfoundation.com.br) |
-| Documentation | [docs.evolutionfoundation.com.br](https://docs.evolutionfoundation.com.br) |
-| Community | [evolutionfoundation.com.br/community](https://evolutionfoundation.com.br/community) |
-| Docker Hub | [evoapicloud/evolution-api](https://hub.docker.com/r/evoapicloud/evolution-api) |
-| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
-| Contributing | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| Security | [SECURITY.md](./SECURITY.md) |
-
----
-
-## Hosting
-
-Deploy Evolution API with optimized infrastructure through our HostGator partnership:
-
-[**Evolution API VPS — HostGator**](https://evolution-api.com/vps-evolution-api)
-
----
-
-## Telemetry
-
-Evolution API collects anonymous telemetry data (routes used, most accessed routes, API version) to help improve the service. **No sensitive or personal data is collected.** This information helps us identify improvements and provide a better experience for users.
-
----
-
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to submit issues, propose features, and open pull requests.
-
-Join our [community](https://evolutionfoundation.com.br/community) to discuss ideas and collaborate.
-
----
-
-## Security
-
-For security issues, **do not open a public issue**. Email **suporte@evofoundation.com.br** or use GitHub's private vulnerability reporting. See [SECURITY.md](./SECURITY.md) for details.
-
----
-
-## Acknowledgments
-
-- [CodeChat](https://github.com/code-chat-br/whatsapp-api) — original WhatsApp API foundation
-- [Baileys](https://github.com/WhiskeySockets/Baileys) — WhatsApp Web library
-
----
-
-## License
-
-Evolution API is licensed under the Apache License 2.0, with additional brand-protection conditions (LOGO/copyright preservation and Usage Notification requirement). See [LICENSE](./LICENSE) for full details.
-
-For licensing inquiries, contact **suporte@evofoundation.com.br**.
-
-## Trademarks
-
-"Evolution Foundation", "Evolution" and "Evolution API" are trademarks of Evolution Foundation. See [TRADEMARKS.md](./TRADEMARKS.md) for the brand assets policy.
-
-Third-party attributions are documented in [NOTICE](./NOTICE).
-
----
-
-<p align="center">
-  Made by <a href="https://evolutionfoundation.com.br">Evolution Foundation</a> · © 2026
-</p>
+© 2026 Ceyteq (Ceylon Technology), for Ceyteq modifications.

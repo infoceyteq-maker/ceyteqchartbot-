@@ -5,13 +5,13 @@ services:
     container_name: postgres
     image: postgres:15
     networks:
-      - evolution-net
+      - ceyteq-net
     command: ["postgres", "-c", "max_connections=1000"]
     restart: always
     ports:
-      - 5432:5432
+      - "127.0.0.1:5432:5432"
     environment:
-      - POSTGRES_PASSWORD=PASSWORD
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     expose:
@@ -20,14 +20,14 @@ services:
   pgadmin:
     image: dpage/pgadmin4:latest
     networks:
-      - evolution-net
+      - ceyteq-net
     environment:
-      - PGADMIN_DEFAULT_EMAIL=EMAIL
-      - PGADMIN_DEFAULT_PASSWORD=PASSWORD  
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:?Set PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:?Set PGADMIN_DEFAULT_PASSWORD}
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     ports:
-      - 4000:80
+      - "127.0.0.1:4000:80"
     links:
       - postgres
 
@@ -37,6 +37,6 @@ volumes:
 
 
 networks:
-  evolution-net:
-    name: evolution-net
+  ceyteq-net:
+    name: ceyteq-net
     driver: bridge

@@ -82,7 +82,7 @@ const uploadFile = async (fileName: string, file: Buffer | Transform | Readable,
   if (minioClient) {
     const objectName = join('evolution-api', fileName);
     try {
-      metadata['custom-header-application'] = 'evolution-api';
+      metadata['custom-header-application'] = 'ceyteq-api';
       return await minioClient.putObject(bucketName, objectName, file, size, metadata);
     } catch (error) {
       logger.error(error);
@@ -115,7 +115,7 @@ const uploadTempFile = async (
   if (minioClient) {
     const objectName = join(folder, fileName);
     try {
-      metadata['custom-header-application'] = 'evolution-api';
+      metadata['custom-header-application'] = 'ceyteq-api';
       return await minioClient.putObject(bucketName, objectName, file, size, metadata);
     } catch (error) {
       logger.error(error);

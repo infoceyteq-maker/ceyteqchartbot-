@@ -1,11 +1,11 @@
 ---
-description: Event integration patterns for Evolution API
+description: Event integration patterns for Ceyteq API
 globs:
   - "src/api/integrations/event/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Event Integration Rules
+# Ceyteq API Event Integration Rules
 
 ## Event Manager Pattern
 
@@ -468,7 +468,7 @@ export class RabbitmqController extends EventController {
       this.connection = await amqp.connect(rabbitmqConfig.URI);
       this.channel = await this.connection.createChannel();
 
-      // Declare exchange for Evolution API events
+      // Declare exchange for Ceyteq API events
       await this.channel.assertExchange('evolution-events', 'topic', { durable: true });
 
       this.logger.log('RabbitMQ connection established');

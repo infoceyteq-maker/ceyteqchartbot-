@@ -1,10 +1,10 @@
-# Evolution API - AI Agent Guidelines
+# Ceyteq API - AI Agent Guidelines
 
-This document provides comprehensive guidelines for AI agents (Claude, GPT, Cursor, etc.) working with the Evolution API codebase.
+This document provides comprehensive guidelines for AI agents (Claude, GPT, Cursor, etc.) working with the Ceyteq API codebase.
 
 ## Project Overview
 
-**Evolution API** is a production-ready, multi-tenant WhatsApp API platform built with Node.js, TypeScript, and Express.js. It supports multiple WhatsApp providers and extensive integrations with chatbots, CRM systems, and messaging platforms.
+**Ceyteq API** is a production-ready, multi-tenant WhatsApp API platform built with Node.js, TypeScript, and Express.js. It supports multiple WhatsApp providers and extensive integrations with chatbots, CRM systems, and messaging platforms.
 
 ## Project Structure & Module Organization
 
@@ -64,7 +64,7 @@ npm run commit      # Interactive commit with Commitizen
 ### Database Management
 ```bash
 # Set database provider first (CRITICAL)
-export DATABASE_PROVIDER=postgresql  # or mysql
+export DATABASE_PROVIDER=mysql  # TiDB/MySQL; PostgreSQL remains supported
 
 # Generate Prisma client
 npm run db:generate
@@ -121,10 +121,10 @@ export class ExampleService {
   public async find(instance: InstanceDto): Promise<ExampleDto | null> {
     try {
       const result = await this.waMonitor.waInstances[instance.instanceName].findData();
-      return result || null; // Return null on not found (Evolution pattern)
+      return result || null; // Return null on not found (Ceyteq pattern)
     } catch (error) {
       this.logger.error('Error finding data:', error);
-      return null; // Return null on error (Evolution pattern)
+      return null; // Return null on error (Ceyteq pattern)
     }
   }
 }
@@ -161,7 +161,7 @@ export class ExampleRouter extends RouterBroker {
 
 #### DTO Pattern (Simple Classes)
 ```typescript
-// CORRECT - Evolution API pattern (no decorators)
+// CORRECT - Ceyteq API pattern (no decorators)
 export class ExampleDto {
   name: string;
   description?: string;
@@ -170,7 +170,7 @@ export class ExampleDto {
 
 // INCORRECT - Don't use class-validator decorators
 export class BadExampleDto {
-  @IsString() // ❌ Evolution API doesn't use decorators
+  @IsString() // ❌ Ceyteq API doesn't use decorators
   name: string;
 }
 ```
@@ -230,7 +230,7 @@ const result = await this.prismaRepository.instance.findUnique({
 ### Channel Integration (WhatsApp Providers)
 - **Baileys**: WhatsApp Web with QR code authentication
 - **Business API**: Official Meta WhatsApp Business API  
-- **Evolution API**: Custom WhatsApp integration
+- **Legacy channel**: Custom WhatsApp integration (uses the existing `EVOLUTION` identifier)
 - **Pattern**: Extend base channel service classes
 
 ### Chatbot Integration
@@ -304,7 +304,7 @@ cp .env.example .env
 
 # NEVER commit secrets to version control
 # Set DATABASE_PROVIDER before database commands
-export DATABASE_PROVIDER=postgresql  # or mysql
+export DATABASE_PROVIDER=mysql  # TiDB/MySQL; PostgreSQL remains supported
 ```
 
 ### Security Best Practices
@@ -317,15 +317,15 @@ export DATABASE_PROVIDER=postgresql  # or mysql
 
 ### Vulnerability Reporting
 - See `SECURITY.md` for security vulnerability reporting process
-- Contact: `contato@evolution-api.com`
+- Contact: `info.ceyteq@gmail.com`
 
 ## Communication Standards
 
 ### Language Requirements
-- **User communication**: Always respond in Portuguese (PT-BR)
+- **User communication**: Respond in the user’s language
 - **Code/comments**: English for technical documentation
 - **API responses**: English for consistency
-- **Error messages**: Portuguese for user-facing errors
+- **Error messages**: Clear and actionable for the user
 
 ### Documentation Standards
 - **Inline comments**: Document complex business logic

@@ -1,15 +1,15 @@
 ---
-description: Validation schemas and patterns for Evolution API
+description: Validation schemas and patterns for Ceyteq API
 globs:
   - "src/validate/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Validation Rules
+# Ceyteq API Validation Rules
 
 ## Validation Schema Structure
 
-### JSONSchema7 Pattern (Evolution API Standard)
+### JSONSchema7 Pattern (Ceyteq API Standard)
 ```typescript
 import { JSONSchema7 } from 'json-schema';
 import { v4 } from 'uuid';

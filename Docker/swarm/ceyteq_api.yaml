@@ -1,0 +1,25 @@
+version: "3.8"
+# Example only: build/publish your own image and inject secrets through your
+# deployment system. Do not put real credentials in this file.
+services:
+  ceyteq_api:
+    image: ${CEYTEQ_API_IMAGE:-ceyteq-api:local}
+    environment:
+      DATABASE_PROVIDER: mysql
+      DATABASE_CONNECTION_URI: ${DATABASE_CONNECTION_URI}
+      DATABASE_CONNECTION_CLIENT_NAME: ${DATABASE_CONNECTION_CLIENT_NAME:-ceyteq}
+      AUTHENTICATION_API_KEY: ${AUTHENTICATION_API_KEY}
+      SERVER_DISABLE_MANAGER: "true"
+      TELEMETRY_ENABLED: "false"
+    volumes:
+      - ceyteq_instances:/app/instances
+    networks:
+      - ceyteq
+    deploy:
+      replicas: 1
+
+volumes:
+  ceyteq_instances:
+networks:
+  ceyteq:
+    driver: overlay

@@ -456,7 +456,7 @@ export class ConfigService {
   private envProcess(): Env {
     return {
       SERVER: {
-        NAME: process.env?.SERVER_NAME || 'evolution',
+        NAME: process.env?.SERVER_NAME || 'ceyteq',
         TYPE: (process.env.SERVER_TYPE as 'http' | 'https') || 'http',
         PORT: Number.parseInt(process.env.SERVER_PORT) || 8080,
         URL: process.env.SERVER_URL,
@@ -485,7 +485,7 @@ export class ConfigService {
           URI: process.env.DATABASE_CONNECTION_URI || '',
           CLIENT_NAME: process.env.DATABASE_CONNECTION_CLIENT_NAME || 'evolution',
         },
-        PROVIDER: process.env.DATABASE_PROVIDER || 'postgresql',
+        PROVIDER: process.env.DATABASE_PROVIDER || 'mysql',
         SAVE_DATA: {
           INSTANCE: process.env?.DATABASE_SAVE_DATA_INSTANCE === 'true',
           NEW_MESSAGE: process.env?.DATABASE_SAVE_DATA_NEW_MESSAGE === 'true',
@@ -797,7 +797,7 @@ export class ConfigService {
         },
       },
       CONFIG_SESSION_PHONE: {
-        CLIENT: process.env?.CONFIG_SESSION_PHONE_CLIENT || 'Evolution API',
+        CLIENT: process.env?.CONFIG_SESSION_PHONE_CLIENT || 'Ceyteq',
         NAME: process.env?.CONFIG_SESSION_PHONE_NAME || 'Chrome',
       },
       QRCODE: {
@@ -878,7 +878,7 @@ export class ConfigService {
         ALLOWED_IPS: process.env?.METRICS_ALLOWED_IPS,
       },
       TELEMETRY: {
-        ENABLED: process.env?.TELEMETRY_ENABLED === undefined || process.env?.TELEMETRY_ENABLED === 'true',
+        ENABLED: process.env?.TELEMETRY_ENABLED === 'true',
         URL: process.env?.TELEMETRY_URL,
       },
       PROXY: {

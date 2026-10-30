@@ -1,11 +1,11 @@
 ---
-description: Guard patterns for authentication and authorization in Evolution API
+description: Guard patterns for authentication and authorization in Ceyteq API
 globs:
   - "src/api/guards/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Guard Rules
+# Ceyteq API Guard Rules
 
 ## Guard Structure Pattern
 

@@ -1,6 +1,9 @@
 .git
-*Dockerfile*
-*docker-compose*
-.env
 node_modules
+**/node_modules
+.next
+**/.next
 dist
+.env
+*.log
+frontend

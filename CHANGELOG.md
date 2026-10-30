@@ -1,3 +1,5 @@
+> Historical upstream release notes, retained for provenance. These entries are not Ceyteq releases.
+
 # 2.3.7 (2025-12-05)
 
 ### Features

@@ -1,8 +1,8 @@
 {
   "dashboard": {
     "id": null,
-    "title": "Evolution API Monitoring",
-    "tags": ["evolution-api", "whatsapp", "monitoring"],
+    "title": "Ceyteq API Monitoring",
+    "tags": ["ceyteq-api", "whatsapp", "monitoring"],
     "style": "dark",
     "timezone": "browser",
     "panels": [
@@ -12,7 +12,7 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "up{job=\"evolution-api\"}",
+            "expr": "up{job=\"ceyteq-api\"}",
             "legendFormat": "API Status"
           }
         ],

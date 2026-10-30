@@ -1,11 +1,11 @@
 ---
-description: Router patterns for Evolution API
+description: Router patterns for Ceyteq API
 globs:
   - "src/api/routes/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Route Rules
+# Ceyteq API Route Rules
 
 ## Router Base Pattern
 
@@ -73,11 +73,11 @@ router
   .get('/', async (req, res) => {
     res.status(HttpStatus.OK).json({
       status: HttpStatus.OK,
-      message: 'Welcome to the Evolution API, it is working!',
+      message: 'Welcome to the Ceyteq API, it is working!',
       version: packageJson.version,
       clientName: process.env.DATABASE_CONNECTION_CLIENT_NAME,
       manager: !serverConfig.DISABLE_MANAGER ? `${req.protocol}://${req.get('host')}/manager` : undefined,
-      documentation: `https://doc.evolution-api.com`,
+      documentation: `http://ceyteq.online/`,
       whatsappWebVersion: (await fetchLatestWaWebVersion({})).version.join('.'),
     });
   })

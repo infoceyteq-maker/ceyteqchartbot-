@@ -9,11 +9,12 @@ import { TypebotService } from '@api/integrations/chatbot/typebot/services/typeb
 import { PrismaRepository, Query } from '@api/repository/repository.service';
 import { eventManager, waMonitor } from '@api/server.module';
 import { Events, wa } from '@api/types/wa.types';
-import { Auth, Chatwoot, ConfigService, HttpServer, Proxy } from '@config/env.config';
+import { Auth, Chatwoot, ConfigService, Database, HttpServer, Proxy } from '@config/env.config';
 import { Logger } from '@config/logger.config';
 import { NotFoundException } from '@exceptions';
 import { Contact, Message, Prisma } from '@prisma/client';
 import { createJid } from '@utils/createJid';
+import { prismaJsonPath } from '@utils/prismaJsonPath';
 import { WASocket } from 'baileys';
 import { isArray } from 'class-validator';
 import EventEmitter2 from 'eventemitter2';
@@ -623,10 +624,38 @@ export class ChannelStartupService {
         messageType: query?.where?.messageType,
         ...timestampFilter,
         AND: [
-          keyFilters?.id ? { key: { path: ['id'], equals: keyFilters?.id } } : {},
-          keyFilters?.fromMe ? { key: { path: ['fromMe'], equals: keyFilters?.fromMe } } : {},
-          keyFilters?.remoteJid ? { key: { path: ['remoteJid'], equals: keyFilters?.remoteJid } } : {},
-          keyFilters?.participants ? { key: { path: ['participants'], equals: keyFilters?.participants } } : {},
+          keyFilters?.id
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'id'),
+                  equals: keyFilters?.id,
+                },
+              }
+            : {},
+          keyFilters?.fromMe !== undefined
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'fromMe'),
+                  equals: keyFilters?.fromMe,
+                },
+              }
+            : {},
+          keyFilters?.remoteJid
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'remoteJid'),
+                  equals: keyFilters?.remoteJid,
+                },
+              }
+            : {},
+          keyFilters?.participants
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'participants'),
+                  equals: keyFilters?.participants,
+                },
+              }
+            : {},
         ],
       },
     });
@@ -647,10 +676,38 @@ export class ChannelStartupService {
         messageType: query?.where?.messageType,
         ...timestampFilter,
         AND: [
-          keyFilters?.id ? { key: { path: ['id'], equals: keyFilters?.id } } : {},
-          keyFilters?.fromMe ? { key: { path: ['fromMe'], equals: keyFilters?.fromMe } } : {},
-          keyFilters?.remoteJid ? { key: { path: ['remoteJid'], equals: keyFilters?.remoteJid } } : {},
-          keyFilters?.participants ? { key: { path: ['participants'], equals: keyFilters?.participants } } : {},
+          keyFilters?.id
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'id'),
+                  equals: keyFilters?.id,
+                },
+              }
+            : {},
+          keyFilters?.fromMe !== undefined
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'fromMe'),
+                  equals: keyFilters?.fromMe,
+                },
+              }
+            : {},
+          keyFilters?.remoteJid
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'remoteJid'),
+                  equals: keyFilters?.remoteJid,
+                },
+              }
+            : {},
+          keyFilters?.participants
+            ? {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'participants'),
+                  equals: keyFilters?.participants,
+                },
+              }
+            : {},
         ],
       },
       orderBy: {
@@ -723,12 +780,10 @@ export class ChannelStartupService {
         : createJid(query.where?.remoteJid)
       : null;
 
-    const where = {
-      instanceId: this.instanceId,
-    };
-
-    if (remoteJid) {
-      where['remoteJid'] = remoteJid;
+    // PostgreSQL uses DISTINCT ON and JSONB operators below. MySQL/TiDB need
+    // their own SQL dialect; keep the response shape identical for API clients.
+    if (this.configService.get<Database>('DATABASE').PROVIDER === 'mysql') {
+      return this.fetchMysqlChats(query, remoteJid);
     }
 
     const timestampFilter =
@@ -827,6 +882,99 @@ export class ChannelStartupService {
     }
 
     return [];
+  }
+
+  private async fetchMysqlChats(query: any, remoteJid: string | null) {
+    const from = query?.where?.messageTimestamp?.gte;
+    const to = query?.where?.messageTimestamp?.lte;
+    const fromTime = from ? Math.floor(new Date(from).getTime() / 1000) : NaN;
+    const toTime = to ? Math.floor(new Date(to).getTime() / 1000) : NaN;
+    const timeFilter =
+      Number.isFinite(fromTime) && Number.isFinite(toTime)
+        ? Prisma.sql`AND m.\`messageTimestamp\` >= ${fromTime} AND m.\`messageTimestamp\` <= ${toTime}`
+        : Prisma.empty;
+    const jidFilter = remoteJid
+      ? Prisma.sql`AND JSON_UNQUOTE(JSON_EXTRACT(m.\`key\`, '$.remoteJid')) = ${remoteJid}`
+      : Prisma.empty;
+    const take = Number.isSafeInteger(query?.take) && query.take > 0 ? query.take : null;
+    const skip = Number.isSafeInteger(query?.skip) && query.skip > 0 ? query.skip : 0;
+    const pagination = take
+      ? Prisma.sql`LIMIT ${take} OFFSET ${skip}`
+      : skip
+        ? Prisma.sql`LIMIT 18446744073709551615 OFFSET ${skip}`
+        : Prisma.empty;
+
+    const results = await this.prismaRepository.$queryRaw<any[]>`
+      WITH ranked_messages AS (
+        SELECT m.*,
+          JSON_UNQUOTE(JSON_EXTRACT(m.\`key\`, '$.remoteJid')) AS remote_jid,
+          ROW_NUMBER() OVER (
+            PARTITION BY JSON_UNQUOTE(JSON_EXTRACT(m.\`key\`, '$.remoteJid'))
+            ORDER BY m.\`messageTimestamp\` DESC, m.\`id\` DESC
+          ) AS row_number_in_chat
+        FROM \`Message\` m
+        WHERE m.\`instanceId\` = ${this.instanceId}
+          AND JSON_UNQUOTE(JSON_EXTRACT(m.\`key\`, '$.remoteJid')) IS NOT NULL
+          ${jidFilter} ${timeFilter}
+      )
+      SELECT c.\`id\` AS contactId, m.remote_jid AS remoteJid,
+        CASE WHEN m.remote_jid LIKE '%@g.us'
+          THEN COALESCE(ch.\`name\`, c.\`pushName\`, m.\`pushName\`)
+          ELSE COALESCE(c.\`pushName\`, m.\`pushName\`, ch.\`name\`) END AS pushName,
+        c.\`profilePicUrl\` AS profilePicUrl,
+        COALESCE(FROM_UNIXTIME(m.\`messageTimestamp\`), c.\`updatedAt\`) AS updatedAt,
+        ch.\`createdAt\` AS windowStart,
+        TIMESTAMPADD(HOUR, 24, ch.\`createdAt\`) AS windowExpires,
+        (TIMESTAMPADD(HOUR, 24, ch.\`createdAt\`) > NOW()) AS windowActive,
+        ch.\`unreadMessages\` AS unreadMessages,
+        m.\`id\` AS lastMessageId, m.\`key\` AS lastMessageKey,
+        m.\`pushName\` AS lastMessagePushName, m.\`participant\` AS lastMessageParticipant,
+        m.\`messageType\` AS lastMessageMessageType, m.\`message\` AS lastMessageMessage,
+        m.\`contextInfo\` AS lastMessageContextInfo, m.\`source\` AS lastMessageSource,
+        m.\`messageTimestamp\` AS lastMessageMessageTimestamp, m.\`instanceId\` AS lastMessageInstanceId,
+        m.\`sessionId\` AS lastMessageSessionId, m.\`status\` AS lastMessageStatus
+      FROM ranked_messages m
+      LEFT JOIN \`Contact\` c ON c.\`remoteJid\` = m.remote_jid AND c.\`instanceId\` = m.\`instanceId\`
+      LEFT JOIN \`Chat\` ch ON ch.\`remoteJid\` = m.remote_jid AND ch.\`instanceId\` = m.\`instanceId\`
+      WHERE m.row_number_in_chat = 1
+      ORDER BY m.\`messageTimestamp\` DESC, m.\`id\` DESC
+      ${pagination}
+    `;
+
+    const jsonValue = (value: any) => {
+      if (typeof value !== 'string') return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    };
+    return results.map((row) => ({
+      id: row.contactId || null,
+      remoteJid: row.remoteJid,
+      pushName: row.pushName,
+      profilePicUrl: row.profilePicUrl,
+      updatedAt: row.updatedAt,
+      windowStart: row.windowStart,
+      windowExpires: row.windowExpires,
+      windowActive: Boolean(row.windowActive),
+      unreadCount: row.unreadMessages || 0,
+      isSaved: !!row.contactId,
+      lastMessage: this.cleanMessageData({
+        id: row.lastMessageId,
+        key: jsonValue(row.lastMessageKey),
+        pushName: row.lastMessagePushName,
+        participant: row.lastMessageParticipant,
+        messageType: row.lastMessageMessageType,
+        message: jsonValue(row.lastMessageMessage),
+        contextInfo: jsonValue(row.lastMessageContextInfo),
+        source: row.lastMessageSource,
+        messageTimestamp: row.lastMessageMessageTimestamp,
+        instanceId: row.lastMessageInstanceId,
+        sessionId: row.lastMessageSessionId,
+        status: row.lastMessageStatus,
+      }),
+    }));
   }
 
   public hasValidMediaContent(message: any): boolean {

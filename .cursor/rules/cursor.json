@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "Cursor IDE configuration for Evolution API project",
+  "description": "Cursor IDE configuration for Ceyteq API project",
   "rules": {
     "general": {
       "max_line_length": 120,
