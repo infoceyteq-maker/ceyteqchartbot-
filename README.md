@@ -50,15 +50,20 @@ Prerequisites: Node.js 22, npm, a TiDB cluster or MySQL 8-compatible database, a
 
 3. In `frontend/.env.local`, set `CEYTEQ_API_URL` to the **server-side** API address (`http://127.0.0.1:8080` for a local API) and set a separate strong `CEYTEQ_SESSION_SECRET`. The secret may match the one in the root `.env` for Docker Compose, but it must not be a committed placeholder. This address is never used by the browser. For multiple frontend replicas, use the same secret on each replica.
 
-4. Generate the Prisma client and, after reviewing the migration history, apply it:
+4. Generate the Prisma client, then choose **one** database setup path after reviewing the schema and backing up any existing data:
 
    ```bash
    npm run db:generate
-   npm run db:deploy
+   # For a new, disposable development database, optionally use schema push:
+   npm run db:push
+   # OR, for a migration-managed database, use the reviewed migration history:
+   # npm run db:deploy
    npm run dev:server
    # In a second terminal:
    npm --prefix frontend run dev
    ```
+
+   `db:push` synchronizes the complete provider-specific schema but does not create migration history. It can modify existing tables and should be reviewed on a disposable TiDB instance first; do not pass `--accept-data-loss` without a backup and an explicit data-loss review. Do not run `migrate dev` immediately after `db:push`: schema drift may prompt a reset. `migrate dev` is a separate development-only option that requires a suitable shadow database; production migration histories must be reconciled or baselined deliberately.
 
    Open `http://localhost:3000`, choose **Connect your workspace**, and enter the global API key. Until then the charts and contacts are illustrative and cannot send real messages. Create a WhatsApp channel and scan its QR code under **Channels**. Your WhatsApp device and messaging provider must be available for a real connection.
 
