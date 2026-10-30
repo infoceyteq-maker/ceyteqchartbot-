@@ -1,8 +1,10 @@
 const dotenv = require('dotenv');
 const { execSync } = require('child_process');
 const { existsSync } = require('fs');
+const { applyEnvironmentAliases } = require('./config/environment-aliases');
 
 dotenv.config();
+applyEnvironmentAliases();
 
 const { DATABASE_PROVIDER } = process.env;
 const databaseProviderDefault = DATABASE_PROVIDER ?? 'mysql';

@@ -23,7 +23,7 @@ jobs:
           DATABASE_PROVIDER: mysql
           DATABASE_CONNECTION_URI: mysql://user:pass@localhost:4000/ceyteq
       - name: Check API
-        run: npm run lint:check && npm run build
+        run: npm run test:config && npm run lint:check && npm run build
       - name: Install and check workspace
         run: npm ci && npm run typecheck && npm run build && npm test
         working-directory: frontend
