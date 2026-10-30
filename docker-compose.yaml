@@ -7,9 +7,10 @@ services:
     env_file: .env
     environment:
       DATABASE_PROVIDER: mysql
+      SERVER_PORT: ${SERVER_PORT:-${PORT:-8080}}
       SERVER_DISABLE_MANAGER: "true"
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${CEYTEQ_API_HOST_PORT:-8080}:${SERVER_PORT:-${PORT:-8080}}"
     volumes:
       - ceyteq_instances:/app/instances
 
@@ -21,7 +22,7 @@ services:
     depends_on:
       - api
     environment:
-      CEYTEQ_API_URL: http://api:8080
+      CEYTEQ_API_URL: http://api:${SERVER_PORT:-${PORT:-8080}}
       CEYTEQ_SESSION_SECRET: ${CEYTEQ_SESSION_SECRET:?Set CEYTEQ_SESSION_SECRET in .env}
     ports:
       - "3000:3000"

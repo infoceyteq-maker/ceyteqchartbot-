@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY tsconfig.json tsup.config.ts runWithProvider.js ./
 COPY src ./src
+COPY config ./config
 COPY prisma ./prisma
 COPY public ./public
 COPY Docker ./Docker
@@ -29,6 +30,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/Docker ./Docker
 COPY --from=builder /app/runWithProvider.js ./
+# Prisma CLI scripts use the same alias mapping as the application.
+COPY --from=builder /app/config ./config
 EXPOSE 8080
 ENTRYPOINT ["bash", "./Docker/scripts/entrypoint.sh"]
 CMD ["node", "dist/main.js"]

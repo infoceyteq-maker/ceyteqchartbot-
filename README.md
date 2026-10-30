@@ -33,14 +33,18 @@ Prerequisites: Node.js 22, npm, a TiDB cluster or MySQL 8-compatible database, a
    cp frontend/.env.example frontend/.env.local
    ```
 
-2. In `.env`, set `DATABASE_PROVIDER=mysql`, a real `DATABASE_CONNECTION_URI`, a strong unique `AUTHENTICATION_API_KEY`, and a random `CEYTEQ_SESSION_SECRET` (at least 32 characters; for example, generate one with `openssl rand -hex 32`). Never commit these secrets. Set `SERVER_URL` to the public backend URL if using webhooks/QR code integrations. Keep the existing `DATABASE_CONNECTION_CLIENT_NAME` when upgrading an existing installation, or its instances will not be listed.
+2. In `.env`, set `DATABASE_PROVIDER=mysql`, a real `DATABASE_URL`, a strong unique `GLOBAL_API_KEY`, and a random `CEYTEQ_SESSION_SECRET` (at least 32 characters; for example, generate one with `openssl rand -hex 32`). Never commit these secrets. Set `SERVER_URL` to the public backend URL if using webhooks/QR code integrations. Keep the existing `DATABASE_CONNECTION_CLIENT_NAME` when upgrading an existing installation, or its instances will not be listed.
 
    ```dotenv
    DATABASE_PROVIDER=mysql
-   DATABASE_CONNECTION_URI='mysql://USER:PASSWORD@HOST:4000/ceyteq?sslaccept=strict'
+   DATABASE_URL='mysql://USER:PASSWORD@HOST:4000/ceyteq?sslaccept=strict'
    DATABASE_CONNECTION_CLIENT_NAME=ceyteq
-   AUTHENTICATION_API_KEY=replace-with-a-strong-random-api-key
+   SERVER_URL=http://localhost:8080
+   PORT=8080
+   GLOBAL_API_KEY=replace-with-a-strong-random-api-key
    ```
+
+   The existing `DATABASE_CONNECTION_URI`, `SERVER_PORT`, and `AUTHENTICATION_API_KEY` names remain supported and **take precedence** over `DATABASE_URL`, `PORT`, and `GLOBAL_API_KEY`, respectively, when both are non-empty. Remove an old setting if you intend to use its new alias instead. The `npm run db:*` commands map `DATABASE_URL` for Prisma; if invoking the Prisma CLI directly, use `DATABASE_CONNECTION_URI`, which is still named in the Prisma schemas.
 
    Percent-encode special characters in the username and password. For a cluster requiring a specific CA, add `&sslcert=/path/to/ca.pem` to the connection URL and make the certificate available to the API process/container. Consult [TiDB's Prisma connection guide](https://docs.pingcap.com/tidb/stable/dev-guide-sample-application-nodejs-prisma/) for the correct TLS settings for your cluster. Do not disable certificate verification in production.
 
@@ -69,7 +73,7 @@ docker compose run --rm api npm run db:deploy
 docker compose up -d
 ```
 
-The frontend is available on port 3000; the API is bound to `127.0.0.1:8080` on the host and reachable by the frontend over the Compose network. The frontend contacts `http://api:8080` on the server side. Migrations are **not** automatically run on startup unless `RUN_DATABASE_MIGRATIONS=true` is explicitly set. The stack expects an external TiDB/MySQL server; it does not provision TiDB. Put an HTTPS reverse proxy and an access-control layer in front of the frontend for production. Protect the API separately from public access.
+The frontend is available on port 3000; the API is bound to `127.0.0.1:8080` on the host by default and reachable by the frontend over the Compose network. The frontend uses the API's configured internal port (`SERVER_PORT`, then `PORT`, default 8080). Set `CEYTEQ_API_HOST_PORT` to change the host-side API port. Migrations are **not** automatically run on startup unless `RUN_DATABASE_MIGRATIONS=true` is explicitly set. The stack expects an external TiDB/MySQL server; it does not provision TiDB. Put an HTTPS reverse proxy and an access-control layer in front of the frontend for production. Protect the API separately from public access.
 
 ## Workspace features
 

@@ -167,9 +167,10 @@ Key environment variables are defined in `.env.example`. The system uses a stron
 
 Critical configurations:
 - `DATABASE_PROVIDER`: postgresql or mysql
-- `DATABASE_CONNECTION_URI`: Database connection string
-- `AUTHENTICATION_API_KEY`: Global API authentication
-- `REDIS_ENABLED`: Enable Redis cache
+- `DATABASE_URL`: Database connection string (`DATABASE_CONNECTION_URI` remains supported and takes precedence)
+- `GLOBAL_API_KEY`: Global API authentication (`AUTHENTICATION_API_KEY` remains supported and takes precedence)
+- `PORT`: Backend listener port (`SERVER_PORT` remains supported and takes precedence)
+- `CACHE_REDIS_ENABLED`: Enable Redis cache
 - `RABBITMQ_ENABLED`/`SQS_ENABLED`: Message queue options
 
 ## Development Guidelines

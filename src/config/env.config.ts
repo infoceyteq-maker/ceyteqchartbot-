@@ -1,7 +1,10 @@
 import { isBooleanString } from 'class-validator';
 import dotenv from 'dotenv';
 
+import { applyEnvironmentAliases } from '../../config/environment-aliases';
+
 dotenv.config();
+applyEnvironmentAliases();
 
 export type HttpServer = {
   NAME: string;
