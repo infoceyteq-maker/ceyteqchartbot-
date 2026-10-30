@@ -138,3 +138,22 @@ test('Prisma command wrapper preserves an existing connection URI', () => {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+test('db:push selects the configured provider schema and forwards the database alias', () => {
+  const cwd = isolatedDir();
+  try {
+    const packageScript = require('../package.json').scripts['db:push'];
+    const match = packageScript.match(/^node runWithProvider\.js "(npx prisma .+)"$/);
+    assert.ok(match, 'db:push must use the provider-aware wrapper');
+    // Substitute a harmless fixture for npx: never contact or modify a database.
+    const command = match[1].replace(/^npx prisma/, `"${process.execPath}" "${cliFixture}" prisma`);
+    for (const provider of ['mysql', 'postgresql']) {
+      const env = { ...cleanEnv(), DATABASE_PROVIDER: provider, DATABASE_URL: fakeUrl };
+      const result = run(process.execPath, [path.join(root, 'runWithProvider.js'), command], { cwd, env });
+      assert.equal(result.databaseUrl, fakeUrl);
+      assert.deepEqual(result.args, ['prisma', 'db', 'push', '--schema', `./prisma/${provider}-schema.prisma`]);
+    }
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
