@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
     && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
-COPY tsconfig.json tsup.config.ts runWithProvider.js ./
+COPY tsconfig.json tsup.config.ts runWithProvider.js prisma.config.ts ./
 COPY src ./src
 COPY config ./config
 COPY prisma ./prisma
@@ -29,7 +29,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/Docker ./Docker
-COPY --from=builder /app/runWithProvider.js ./
+COPY --from=builder /app/runWithProvider.js /app/prisma.config.ts ./
 # Prisma CLI scripts use the same alias mapping as the application.
 COPY --from=builder /app/config ./config
 EXPOSE 8080

@@ -9,8 +9,8 @@
   --shadow-small: 5px 5px 12px #cbd5dd, -5px -5px 12px #f8fbfd;
 }
 * { box-sizing: border-box; }
-html { min-height: 100%; background: #e5ebef; }
-body { margin: 0; color: var(--ink); background: #e5ebef; font-family: 'Manrope Variable', 'Manrope', Arial, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; }
+html { min-height: 100%; background: #e0e5ec; }
+body { margin: 0; min-height: 100vh; color: var(--ink); background: #e0e5ec; font-family: 'Manrope Variable', 'Manrope', Arial, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; }
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
@@ -22,6 +22,7 @@ p, h1, h2, h3 { margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .app-shell { min-height: 100vh; display: flex; }
 .sidebar { width: 238px; flex: 0 0 238px; background: linear-gradient(155deg, #172c45 0%, #111f33 75%); color: #b1c0cf; min-height: 100vh; padding: 28px 17px 15px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; box-shadow: 5px 0 20px #aebbc580; z-index: 10; }
+.sidebar-brand-link { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 28px; color: #fff; }
 .brand-mark { display: inline-flex; width: 44px; height: 44px; flex: 0 0 44px; filter: drop-shadow(3px 4px 5px #091423) drop-shadow(-2px -2px 4px #34506c); }
 .brand-mark img { width: 100%; height: 100%; }

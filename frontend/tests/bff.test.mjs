@@ -92,10 +92,37 @@ function call(path, { method = 'GET', body, headers = {}, useCookie = true } = {
   return fetch(base + path, { method, headers: { ...defaultHeaders, ...headers }, body });
 }
 
-test('sample page renders and unauthenticated proxy access is denied', async () => {
+test('control screen and existing workspace routes render without exposing proxy access', async () => {
   const page = await fetch(base);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /Sample workspace/);
+  const html = await page.text();
+  assert.match(html, /<title>Ceyteq Digital Platform<\/title>/);
+  assert.match(html, /System Status/);
+  assert.match(html, /Checking your workspace connection/);
+  assert.match(html, /Does not indicate channel or database health/);
+  for (const path of ['/workspace', '/channels', '/settings']) assert.ok(html.includes(`href="${path}"`));
+  for (const contact of ['tel:+94788607143', 'tel:+94768607143', 'mailto:info.ceyteq@gmail.com', 'http://ceyteq.online/']) {
+    assert.ok(html.includes(`href="${contact}"`), `Missing contact link: ${contact}`);
+  }
+  const socialLinks = {
+    Facebook: 'https://www.facebook.com/share/1KM2kZvaCC/',
+    Instagram: 'https://www.instagram.com/ceyteq/',
+    'X (Twitter)': 'https://x.com/CeylonTech22598',
+    LinkedIn: 'https://www.linkedin.com/in/ceylon-technology',
+    TikTok: 'https://www.tiktok.com/@ceyteq?lang=en-GB',
+    YouTube: 'https://youtube.com/@ceylontechnology-ceyteq?si=a4L-B_OZjvhjO7sw',
+    Pinterest: 'https://www.pinterest.com/infoceyteq/',
+  };
+  for (const [name, url] of Object.entries(socialLinks)) {
+    assert.ok(html.includes(name), `Missing social link label: ${name}`);
+    assert.ok(html.includes(`href="${url}"`), `Incorrect social link URL: ${name}`);
+  }
+  assert.ok(html.includes('href="https://wa.me/94788607143"'));
+  for (const path of ['/workspace', '/conversations', '/contacts', '/channels', '/integrations', '/settings', '/support']) {
+    const workspace = await fetch(base + path);
+    assert.equal(workspace.status, 200, path);
+    assert.match(await workspace.text(), /Sample workspace/, path);
+  }
   const response = await call('/api/backend/instance/fetchInstances', { useCookie: false });
   assert.equal(response.status, 401);
 });
