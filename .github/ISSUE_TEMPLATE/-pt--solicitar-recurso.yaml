@@ -13,7 +13,7 @@ body:
       description: '**NÃO ABRA PARA PERGUNTAS GERAIS DE SUPORTE.**'
 
       options:
-        - label: Sim, pesquisei solicitações semelhantes no [GitHub](https://github.com/code-chat-br/whatsapp-api/issues) e não encontrei nenhum.
+        - label: Sim, pesquisei solicitações semelhantes no [GitHub](https://github.com/infoceyteq-maker/ceyteqchartbot-/issues) e não encontrei nenhum.
           required: true
 
   - type: dropdown

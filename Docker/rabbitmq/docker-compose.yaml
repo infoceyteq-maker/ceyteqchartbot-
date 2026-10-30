@@ -5,21 +5,21 @@ services:
     container_name: rabbitmq
     image: rabbitmq:management
     environment:
-      - RABBITMQ_ERLANG_COOKIE=33H2CdkzF5WrnJ4ud6nkUdRTKXvbCHeFjvVL71p
+      - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_ERLANG_COOKIE:?Set RABBITMQ_ERLANG_COOKIE}
       - RABBITMQ_DEFAULT_VHOST=default
-      - RABBITMQ_DEFAULT_USER=USER
-      - RABBITMQ_DEFAULT_PASS=PASSWORD
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:?Set RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:?Set RABBITMQ_DEFAULT_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq/
     ports:
-      - 5672:5672
-      - 15672:15672
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
 
 volumes:
   rabbitmq_data:
 
 
 networks:
-  evolution-net:
-    name: evolution-net
+  ceyteq-net:
+    name: ceyteq-net
     driver: bridge

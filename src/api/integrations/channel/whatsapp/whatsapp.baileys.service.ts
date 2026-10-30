@@ -84,6 +84,7 @@ import { createJid } from '@utils/createJid';
 import { fetchLatestWaWebVersion } from '@utils/fetchLatestWaWebVersion';
 import { makeProxyAgent, makeProxyAgentUndici } from '@utils/makeProxyAgent';
 import { getOnWhatsappCache, saveOnWhatsappCache } from '@utils/onWhatsappCache';
+import { prismaJsonPath } from '@utils/prismaJsonPath';
 import { status } from '@utils/renderStatus';
 import { sendTelemetry } from '@utils/sendTelemetry';
 import useMultiFileAuthStatePrisma from '@utils/use-multi-file-auth-state-prisma';
@@ -522,12 +523,14 @@ export class BaileysStartupService extends ChannelStartupService {
 
   private async getMessage(key: proto.IMessageKey, full = false) {
     try {
-      // Use raw SQL to avoid JSON path issues
-      const webMessageInfo = (await this.prismaRepository.$queryRaw`
-        SELECT * FROM "Message"
-        WHERE "instanceId" = ${this.instanceId}
-        AND "key"->>'id' = ${key.id}
-      `) as proto.IWebMessageInfo[];
+      const storedMessage = await this.prismaRepository.message.findFirst({
+        where: {
+          instanceId: this.instanceId,
+          key: { path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'id'), equals: key.id },
+        },
+      });
+      if (!storedMessage) return full ? undefined : { conversation: '' };
+      const webMessageInfo = [storedMessage as unknown as proto.IWebMessageInfo];
 
       if (full) {
         return webMessageInfo[0];
@@ -1637,13 +1640,15 @@ export class BaileysStartupService extends ChannelStartupService {
 
             const searchId = originalMessageId || key.id;
 
-            const messages = (await this.prismaRepository.$queryRaw`
-              SELECT * FROM "Message"
-              WHERE "instanceId" = ${this.instanceId}
-              AND "key"->>'id' = ${searchId}
-              LIMIT 1
-            `) as any[];
-            findMessage = messages[0] || null;
+            findMessage = await this.prismaRepository.message.findFirst({
+              where: {
+                instanceId: this.instanceId,
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'id'),
+                  equals: searchId,
+                },
+              },
+            });
 
             if (!findMessage?.id) {
               this.logger.warn(`Original message not found for update. Skipping. Key: ${JSON.stringify(key)}`);
@@ -3776,7 +3781,12 @@ export class BaileysStartupService extends ChannelStartupService {
         if (messageId) {
           const isLogicalDeleted = configService.get<Database>('DATABASE').DELETE_DATA.LOGICAL_MESSAGE_DELETE;
           let message = await this.prismaRepository.message.findFirst({
-            where: { key: { path: ['id'], equals: messageId } },
+            where: {
+              key: {
+                path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'id'),
+                equals: messageId,
+              },
+            },
           });
           if (isLogicalDeleted) {
             if (!message) return response;
@@ -4196,7 +4206,12 @@ export class BaileysStartupService extends ChannelStartupService {
           const messageId = messageSent.message?.protocolMessage?.key?.id;
           if (messageId && this.configService.get<Database>('DATABASE').SAVE_DATA.NEW_MESSAGE) {
             let message = await this.prismaRepository.message.findFirst({
-              where: { key: { path: ['id'], equals: messageId } },
+              where: {
+                key: {
+                  path: prismaJsonPath(this.configService.get<Database>('DATABASE').PROVIDER, 'id'),
+                  equals: messageId,
+                },
+              },
             });
             if (!message) throw new NotFoundException('Message not found');
 
@@ -4734,50 +4749,59 @@ export class BaileysStartupService extends ChannelStartupService {
   private async updateMessagesReadedByTimestamp(remoteJid: string, timestamp?: number): Promise<number> {
     if (timestamp === undefined || timestamp === null) return 0;
 
-    // Use raw SQL to avoid JSON path issues
-    const result = await this.prismaRepository.$executeRaw`
-      UPDATE "Message"
-      SET "status" = ${status[4]}
-      WHERE "instanceId" = ${this.instanceId}
-      AND "key"->>'remoteJid' = ${remoteJid}
-      AND ("key"->>'fromMe')::boolean = false
-      AND "messageTimestamp" <= ${timestamp}
-      AND ("status" IS NULL OR "status" = ${status[3]})
-    `;
-
-    if (result) {
-      if (result > 0) {
-        this.updateChatUnreadMessages(remoteJid);
-      }
-
-      return result;
-    }
-
-    return 0;
+    const provider = this.configService.get<Database>('DATABASE').PROVIDER;
+    const result = await this.prismaRepository.message.updateMany({
+      where: {
+        instanceId: this.instanceId,
+        messageTimestamp: { lte: timestamp },
+        AND: [
+          { key: { path: prismaJsonPath(provider, 'remoteJid'), equals: remoteJid } },
+          { key: { path: prismaJsonPath(provider, 'fromMe'), equals: false } },
+          { OR: [{ status: null }, { status: status[3] }] },
+        ],
+      },
+      data: { status: status[4] },
+    });
+    if (result.count > 0) await this.updateChatUnreadMessages(remoteJid);
+    return result.count;
   }
 
   private async updateChatUnreadMessages(remoteJid: string): Promise<number> {
+    const provider = this.configService.get<Database>('DATABASE').PROVIDER;
     const [chat, unreadMessages] = await Promise.all([
-      this.prismaRepository.chat.findFirst({ where: { remoteJid } }),
-      // Use raw SQL to avoid JSON path issues
-      this.prismaRepository.$queryRaw`
-        SELECT COUNT(*)::int as count FROM "Message"
-        WHERE "instanceId" = ${this.instanceId}
-        AND "key"->>'remoteJid' = ${remoteJid}
-        AND ("key"->>'fromMe')::boolean = false
-        AND "status" = ${status[3]}
-      `.then((result: any[]) => result[0]?.count || 0),
+      this.prismaRepository.chat.findFirst({ where: { remoteJid, instanceId: this.instanceId } }),
+      this.prismaRepository.message.count({
+        where: {
+          instanceId: this.instanceId,
+          status: status[3],
+          AND: [
+            { key: { path: prismaJsonPath(provider, 'remoteJid'), equals: remoteJid } },
+            { key: { path: prismaJsonPath(provider, 'fromMe'), equals: false } },
+          ],
+        },
+      }),
     ]);
-
     if (chat && chat.unreadMessages !== unreadMessages) {
       await this.prismaRepository.chat.update({ where: { id: chat.id }, data: { unreadMessages } });
     }
-
     return unreadMessages;
   }
 
   private async addLabel(labelId: string, instanceId: string, chatId: string) {
     const id = cuid();
+
+    if (this.configService.get<Database>('DATABASE').PROVIDER === 'mysql') {
+      await this.prismaRepository.$executeRaw`
+        INSERT INTO \`Chat\` (\`id\`, \`instanceId\`, \`remoteJid\`, \`labels\`, \`createdAt\`, \`updatedAt\`)
+        VALUES (${id}, ${instanceId}, ${chatId}, JSON_ARRAY(${labelId}), NOW(), NOW())
+        ON DUPLICATE KEY UPDATE \`labels\` = IF(
+          JSON_CONTAINS(COALESCE(\`labels\`, JSON_ARRAY()), JSON_QUOTE(${labelId})),
+          COALESCE(\`labels\`, JSON_ARRAY()),
+          JSON_ARRAY_APPEND(COALESCE(\`labels\`, JSON_ARRAY()), '$', ${labelId})
+        ), \`updatedAt\` = NOW()
+      `;
+      return;
+    }
 
     await this.prismaRepository.$executeRawUnsafe(
       `INSERT INTO "Chat" ("id", "instanceId", "remoteJid", "labels", "createdAt", "updatedAt")
@@ -4802,6 +4826,26 @@ export class BaileysStartupService extends ChannelStartupService {
 
   private async removeLabel(labelId: string, instanceId: string, chatId: string) {
     const id = cuid();
+
+    if (this.configService.get<Database>('DATABASE').PROVIDER === 'mysql') {
+      await this.prismaRepository.$transaction(async (tx) => {
+        const rows = await tx.$queryRaw<{ labels: unknown }[]>`
+          SELECT \`labels\` FROM \`Chat\` WHERE \`instanceId\` = ${instanceId}
+            AND \`remoteJid\` = ${chatId} FOR UPDATE
+        `;
+        if (!rows.length) {
+          await tx.chat.create({ data: { id, instanceId, remoteJid: chatId, labels: [] } });
+          return;
+        }
+        const rawLabels = rows[0].labels;
+        const labels = typeof rawLabels === 'string' ? JSON.parse(rawLabels) : rawLabels;
+        await tx.chat.updateMany({
+          where: { instanceId, remoteJid: chatId },
+          data: { labels: Array.isArray(labels) ? labels.filter((label) => label !== labelId) : [] },
+        });
+      });
+      return;
+    }
 
     await this.prismaRepository.$executeRawUnsafe(
       `INSERT INTO "Chat" ("id", "instanceId", "remoteJid", "labels", "createdAt", "updatedAt")
@@ -5026,54 +5070,33 @@ export class BaileysStartupService extends ChannelStartupService {
       }
     }
 
-    const count = await this.prismaRepository.message.count({
-      where: {
-        instanceId: this.instanceId,
-        id: query?.where?.id,
-        source: query?.where?.source,
-        messageType: query?.where?.messageType,
-        ...timestampFilter,
-        AND: [
-          keyFilters?.id ? { key: { path: ['id'], equals: keyFilters?.id } } : {},
-          keyFilters?.fromMe ? { key: { path: ['fromMe'], equals: keyFilters?.fromMe } } : {},
-          keyFilters?.participant ? { key: { path: ['participant'], equals: keyFilters?.participant } } : {},
-          {
-            OR: [
-              keyFilters?.remoteJid ? { key: { path: ['remoteJid'], equals: keyFilters?.remoteJid } } : {},
-              keyFilters?.remoteJidAlt ? { key: { path: ['remoteJidAlt'], equals: keyFilters?.remoteJidAlt } } : {},
-            ],
-          },
-        ],
-      },
-    });
-
-    if (!query?.offset) {
-      query.offset = 50;
+    const provider = this.configService.get<Database>('DATABASE').PROVIDER;
+    const keyConditions: any[] = [];
+    for (const property of ['id', 'fromMe', 'participant'] as const) {
+      if (keyFilters?.[property] !== undefined && keyFilters?.[property] !== null) {
+        keyConditions.push({ key: { path: prismaJsonPath(provider, property), equals: keyFilters[property] } });
+      }
     }
+    const remoteConditions = ['remoteJid', 'remoteJidAlt']
+      .filter((property) => !!keyFilters?.[property])
+      .map((property) => ({ key: { path: prismaJsonPath(provider, property), equals: keyFilters[property] } }));
+    if (remoteConditions.length) keyConditions.push({ OR: remoteConditions });
 
-    if (!query?.page) {
-      query.page = 1;
-    }
+    const where: any = {
+      instanceId: this.instanceId,
+      id: query?.where?.id,
+      source: query?.where?.source,
+      messageType: query?.where?.messageType,
+      ...timestampFilter,
+      AND: keyConditions,
+    };
+    const count = await this.prismaRepository.message.count({ where });
+
+    if (!query?.offset) query.offset = 50;
+    if (!query?.page) query.page = 1;
 
     const messages = await this.prismaRepository.message.findMany({
-      where: {
-        instanceId: this.instanceId,
-        id: query?.where?.id,
-        source: query?.where?.source,
-        messageType: query?.where?.messageType,
-        ...timestampFilter,
-        AND: [
-          keyFilters?.id ? { key: { path: ['id'], equals: keyFilters?.id } } : {},
-          keyFilters?.fromMe ? { key: { path: ['fromMe'], equals: keyFilters?.fromMe } } : {},
-          keyFilters?.participant ? { key: { path: ['participant'], equals: keyFilters?.participant } } : {},
-          {
-            OR: [
-              keyFilters?.remoteJid ? { key: { path: ['remoteJid'], equals: keyFilters?.remoteJid } } : {},
-              keyFilters?.remoteJidAlt ? { key: { path: ['remoteJidAlt'], equals: keyFilters?.remoteJidAlt } } : {},
-            ],
-          },
-        ],
-      },
+      where,
       orderBy: { messageTimestamp: 'desc' },
       skip: query.offset * (query?.page === 1 ? 0 : (query?.page as number) - 1),
       take: query.offset,

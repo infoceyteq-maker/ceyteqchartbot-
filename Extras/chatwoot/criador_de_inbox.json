@@ -147,7 +147,7 @@
     },
     {
       "parameters": {
-        "content": "## Workflow Para Criar Inbox - Evolution 2.0 ou superior\n**Aqui você configura a comunicação entre o chatwoot e a Evolution API para criar novas instâncias a partir do chatwoot**\n**Instruções**\n**No node Info Base, configure as variáveis de seu Chatwoot e Evolution API**",
+        "content": "## Workflow Para Criar Inbox - Ceyteq\n**Aqui você configura a comunicação entre o chatwoot e a Ceyteq API para criar novas instâncias a partir do chatwoot**\n**Instruções**\n**No node Info Base, configure as variáveis de seu Chatwoot e Ceyteq API**",
         "width": 1129.7777777777778
       },
       "id": "7c66af51-b01e-4b76-8a8c-0193e87ec9d5",

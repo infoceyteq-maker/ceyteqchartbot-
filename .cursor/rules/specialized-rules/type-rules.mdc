@@ -1,12 +1,12 @@
 ---
-description: Type definitions and interfaces for Evolution API
+description: Type definitions and interfaces for Ceyteq API
 globs:
   - "src/api/types/**/*.ts"
   - "src/@types/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Type Rules
+# Ceyteq API Type Rules
 
 ## Namespace Pattern
 
@@ -147,7 +147,7 @@ export const TypeMediaMessage = [
   'audioMessage',
   'videoMessage',
   'stickerMessage',
-  'ptvMessage', // Evolution API includes this
+  'ptvMessage', // Ceyteq API includes this
 ];
 
 export const MessageSubtype = [

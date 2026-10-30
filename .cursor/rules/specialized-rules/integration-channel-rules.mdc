@@ -1,11 +1,11 @@
 ---
-description: Channel integration patterns for Evolution API
+description: Channel integration patterns for Ceyteq API
 globs:
   - "src/api/integrations/channel/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Channel Integration Rules
+# Ceyteq API Channel Integration Rules
 
 ## Channel Controller Pattern
 
@@ -175,7 +175,7 @@ export class EvolutionStartupService extends ChannelStartupService {
 
   public async connectToWhatsapp(data: any): Promise<void> {
     // Evolution-specific connection logic
-    this.logger.log('Connecting to Evolution API');
+    this.logger.log('Connecting to Ceyteq API');
     
     // Set up webhook listeners
     this.setupWebhookHandlers();
@@ -197,8 +197,8 @@ export class EvolutionStartupService extends ChannelStartupService {
       
       return response.data;
     } catch (error) {
-      this.logger.error(`Evolution API call failed: ${error.message}`);
-      throw new InternalServerErrorException('Evolution API call failed');
+      this.logger.error(`Ceyteq API call failed: ${error.message}`);
+      throw new InternalServerErrorException('Ceyteq API call failed');
     }
   }
 
@@ -207,7 +207,7 @@ export class EvolutionStartupService extends ChannelStartupService {
   }
 
   private async initializeConnection(data: any): Promise<void> {
-    // Initialize connection with Evolution API
+    // Initialize connection with Ceyteq API
   }
 }
 ```
@@ -325,7 +325,7 @@ export class BaileysStartupService extends ChannelStartupService {
       auth: state,
       logger: P({ level: 'error' }),
       printQRInTerminal: false,
-      browser: ['Evolution API', 'Chrome', '4.0.0'],
+      browser: ['Ceyteq API', 'Chrome', '4.0.0'],
       defaultQueryTimeoutMs: 60000,
     });
 

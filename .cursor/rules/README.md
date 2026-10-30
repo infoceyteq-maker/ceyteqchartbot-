@@ -1,12 +1,12 @@
-# Evolution API Cursor Rules
+# Ceyteq API Cursor Rules
 
-Este diretório contém as regras e configurações do Cursor IDE para o projeto Evolution API.
+Este diretório contém as regras e configurações do Cursor IDE para o projeto Ceyteq API.
 
 ## Estrutura dos Arquivos
 
 ### Arquivos Principais (alwaysApply: true)
 - **`core-development.mdc`** - Princípios fundamentais de desenvolvimento
-- **`project-context.mdc`** - Contexto específico do projeto Evolution API
+- **`project-context.mdc`** - Contexto específico do projeto Ceyteq API
 - **`cursor.json`** - Configurações do Cursor IDE
 
 ### Regras Especializadas (alwaysApply: false)
@@ -56,7 +56,7 @@ Cada arquivo de regras contém:
 
 O arquivo `cursor.json` contém:
 - Configurações de formatação
-- Padrões de código específicos do Evolution API
+- Padrões de código específicos do Ceyteq API
 - Diretórios principais do projeto
 - Integrações e tecnologias utilizadas
 
@@ -104,4 +104,4 @@ src/
 └── exceptions/         # Custom exceptions
 ```
 
-Este sistema de regras garante consistência no código e facilita o desenvolvimento seguindo os padrões estabelecidos do Evolution API.
+Este sistema de regras garante consistência no código e facilita o desenvolvimento seguindo os padrões estabelecidos do Ceyteq API.

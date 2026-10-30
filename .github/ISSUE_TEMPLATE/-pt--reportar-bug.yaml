@@ -14,14 +14,14 @@ body:
       description: |
         O rastreador de problemas é apenas para relatar bugs e solicitações de recursos.
         Para perguntas de suporte relacionadas ao usuário final, acesse:
-          - [Discord](https://evolution-api.com/discord)
-          - [Grupo do WhatsApp](https://evolution-api.com/whatsapp)
+          - [Ceyteq website](http://ceyteq.online/)
+          - [WhatsApp Ceyteq](https://wa.me/94788607143)
           <br/>
 
         **NÃO ABRA UM PROBLEMA PARA PERGUNTAS GERAIS DE SUPORTE.**
 
       options:
-        - label: Sim, pesquisei problemas semelhantes no [GitHub](https://github.com/EvolutionAPI/evolution-api/issues) e não encontrei nenhum.
+        - label: Sim, pesquisei problemas semelhantes no [GitHub](https://github.com/infoceyteq-maker/ceyteqchartbot-/issues) e não encontrei nenhum.
           required: true
 
   - type: textarea

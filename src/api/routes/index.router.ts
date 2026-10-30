@@ -10,8 +10,6 @@ import { configService, Database, Facebook } from '@config/env.config';
 import { fetchLatestWaWebVersion } from '@utils/fetchLatestWaWebVersion';
 import { NextFunction, Request, Response, Router } from 'express';
 import fs from 'fs';
-import mimeTypes from 'mime-types';
-import path from 'path';
 
 import { BusinessRouter } from './business.router';
 import { CallRouter } from './call.router';
@@ -23,7 +21,6 @@ import { ProxyRouter } from './proxy.router';
 import { MessageRouter } from './sendMessage.router';
 import { SettingsRouter } from './settings.router';
 import { TemplateRouter } from './template.router';
-import { ViewsRouter } from './view.router';
 
 enum HttpStatus {
   OK = 200,
@@ -48,14 +45,10 @@ const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 const metricsIPWhitelist = (req: Request, res: Response, next: NextFunction) => {
   const metricsConfig = configService.get('METRICS');
   const allowedIPs = metricsConfig.ALLOWED_IPS?.split(',').map((ip) => ip.trim()) || ['127.0.0.1'];
-  const clientIPs = [
-    req.ip,
-    req.connection.remoteAddress,
-    req.socket.remoteAddress,
-    req.headers['x-forwarded-for'],
-  ].filter((ip) => ip !== undefined);
-
-  if (allowedIPs.filter((ip) => clientIPs.includes(ip)) === 0) {
+  // Only the directly connected peer is considered. Forwarded headers are
+  // untrusted unless a separately configured proxy authenticates them.
+  const peer = req.socket.remoteAddress?.replace(/^::ffff:/, '');
+  if (!peer || !allowedIPs.includes(peer)) {
     return res.status(403).send('Forbidden: IP not allowed');
   }
 
@@ -74,7 +67,7 @@ const metricsBasicAuth = (req: Request, res: Response, next: NextFunction) => {
 
   const auth = req.get('Authorization');
   if (!auth || !auth.startsWith('Basic ')) {
-    res.set('WWW-Authenticate', 'Basic realm="Evolution API Metrics"');
+    res.set('WWW-Authenticate', 'Basic realm="Ceyteq Metrics"');
     return res.status(401).send('Authentication required');
   }
 
@@ -160,35 +153,15 @@ if (metricsConfig.ENABLED) {
   });
 }
 
-if (!serverConfig.DISABLE_MANAGER) router.use('/manager', new ViewsRouter().router);
-
-router.get('/assets/*', (req, res) => {
-  const fileName = req.params[0];
-
-  // Security: Reject paths containing traversal patterns
-  if (!fileName || fileName.includes('..') || fileName.includes('\\') || path.isAbsolute(fileName)) {
-    return res.status(403).send('Forbidden');
-  }
-
-  const basePath = path.join(process.cwd(), 'manager', 'dist');
-  const assetsPath = path.join(basePath, 'assets');
-  const filePath = path.join(assetsPath, fileName);
-
-  // Security: Ensure the resolved path is within the assets directory
-  const resolvedPath = path.resolve(filePath);
-  const resolvedAssetsPath = path.resolve(assetsPath);
-
-  if (!resolvedPath.startsWith(resolvedAssetsPath + path.sep) && resolvedPath !== resolvedAssetsPath) {
-    return res.status(403).send('Forbidden');
-  }
-
-  if (fs.existsSync(resolvedPath)) {
-    res.set('Content-Type', mimeTypes.lookup(resolvedPath) || 'text/css');
-    res.send(fs.readFileSync(resolvedPath));
-  } else {
-    res.status(404).send('File not found');
-  }
-});
+// The dashboard runs as a separate Next.js service. Never serve the old,
+// prebuilt manager or redirect to a URL derived from an untrusted Host header.
+if (!serverConfig.DISABLE_MANAGER) {
+  router.get('/manager', (_req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) return res.status(503).json({ message: 'Configure FRONTEND_URL for the Ceyteq workspace.' });
+    return res.redirect(302, frontendUrl);
+  });
+}
 
 router
   .use((req, res, next) => telemetry.collectTelemetry(req, res, next))
@@ -196,11 +169,11 @@ router
   .get('/', async (req, res) => {
     res.status(HttpStatus.OK).json({
       status: HttpStatus.OK,
-      message: 'Welcome to the Evolution API, it is working!',
+      message: 'Welcome to the Ceyteq API, it is working!',
       version: packageJson.version,
       clientName: databaseConfig.CONNECTION.CLIENT_NAME,
-      manager: !serverConfig.DISABLE_MANAGER ? `${req.protocol}://${req.get('host')}/manager` : undefined,
-      documentation: `https://doc.evolution-api.com`,
+      manager: !serverConfig.DISABLE_MANAGER ? process.env.FRONTEND_URL : undefined,
+      documentation: 'http://ceyteq.online/',
       whatsappWebVersion: (await fetchLatestWaWebVersion({})).version.join('.'),
     });
   })

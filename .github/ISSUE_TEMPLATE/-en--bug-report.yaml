@@ -14,14 +14,14 @@ body:
       description: |
         The issue tracker is only for reporting bugs and feature requests.
         For user-related support questions, please visit:
-          - [Discord](https://evolution-api.com/discord)
-          - [WhatsApp Group](https://evolution-api.com/whatsapp)
+          - [Ceyteq website](http://ceyteq.online/)
+          - [Ceyteq WhatsApp](https://wa.me/94788607143)
           <br/>
 
         **DO NOT OPEN AN ISSUE FOR GENERAL SUPPORT QUESTIONS.**
 
       options:
-        - label: Yes, I have searched for similar issues on [GitHub](https://github.com/EvolutionAPI/evolution-api/issues) and found none.
+        - label: Yes, I have searched for similar issues on [GitHub](https://github.com/infoceyteq-maker/ceyteqchartbot-/issues) and found none.
           required: true
 
   - type: textarea

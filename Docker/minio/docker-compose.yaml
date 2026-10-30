@@ -5,15 +5,16 @@ services:
     container_name: minio
     image: quay.io/minio/minio
     networks:
-      - evolution-net
+      - ceyteq-net
     command: server /data --console-address ":9001"
     restart: always
     ports:
-      - 5432:5432
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
-      - MINIO_ROOT_USER=USER
-      - MINIO_ROOT_PASSWORD=PASSWORD
-      - MINIO_BROWSER_REDIRECT_URL=http:/localhost:9001
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
       - MINIO_SERVER_URL=http://localhost:9000
     volumes:
       - minio_data:/data
@@ -26,6 +27,6 @@ volumes:
 
 
 networks:
-  evolution-net:
-    name: evolution-net
+  ceyteq-net:
+    name: ceyteq-net
     driver: bridge

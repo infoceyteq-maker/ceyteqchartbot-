@@ -1,11 +1,11 @@
 ---
-description: Chatbot integration patterns for Evolution API
+description: Chatbot integration patterns for Ceyteq API
 globs:
   - "src/api/integrations/chatbot/**/*.ts"
 alwaysApply: false
 ---
 
-# Evolution API Chatbot Integration Rules
+# Ceyteq API Chatbot Integration Rules
 
 ## Base Chatbot Pattern
 
@@ -429,7 +429,7 @@ export class DifyService extends BaseChatbotService<DifyModel, any> {
 
 ## Chatbot Router Pattern
 
-### Chatbot Router Structure (Evolution API Real Pattern)
+### Chatbot Router Structure (Ceyteq API Real Pattern)
 ```typescript
 export class ChatbotRouter {
   public readonly router: Router;
@@ -437,7 +437,7 @@ export class ChatbotRouter {
   constructor(...guards: any[]) {
     this.router = Router();
 
-    // Real Evolution API chatbot integrations
+    // Real Ceyteq API chatbot integrations
     this.router.use('/evolutionBot', new EvolutionBotRouter(...guards).router);
     this.router.use('/chatwoot', new ChatwootRouter(...guards).router);
     this.router.use('/typebot', new TypebotRouter(...guards).router);
@@ -452,7 +452,7 @@ export class ChatbotRouter {
 
 ## Chatbot Validation Patterns
 
-### Chatbot Schema Validation (Evolution API Pattern)
+### Chatbot Schema Validation (Ceyteq API Pattern)
 ```typescript
 import { JSONSchema7 } from 'json-schema';
 import { v4 } from 'uuid';

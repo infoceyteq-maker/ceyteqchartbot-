@@ -1,60 +1,34 @@
-FROM node:24-alpine AS builder
+# Ceyteq API: build with the MySQL Prisma client used for TiDB.
+FROM node:22-bookworm-slim AS builder
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates git ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY tsconfig.json tsup.config.ts runWithProvider.js ./
+COPY src ./src
+COPY prisma ./prisma
+COPY public ./public
+COPY Docker ./Docker
+RUN DATABASE_PROVIDER=mysql DATABASE_CONNECTION_URI='mysql://user:pass@localhost:4000/ceyteq' npm run db:generate \
+    && npm run build
 
-RUN apk update && \
-    apk add --no-cache git ffmpeg wget curl bash openssl
-
-LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
-LABEL maintainer="Davidson Gomes" git="https://github.com/DavidsonGomes"
-LABEL contact="contato@evolution-api.com"
-
-WORKDIR /evolution
-
-COPY ./package*.json ./
-COPY ./tsconfig.json ./
-COPY ./tsup.config.ts ./
-
-RUN npm ci --silent
-
-COPY ./src ./src
-COPY ./public ./public
-COPY ./prisma ./prisma
-COPY ./manager ./manager
-COPY ./.env.example ./.env
-COPY ./runWithProvider.js ./
-
-COPY ./Docker ./Docker
-
-RUN chmod +x ./Docker/scripts/* && dos2unix ./Docker/scripts/*
-
-RUN ./Docker/scripts/generate_database.sh
-
-RUN npm run build
-
-FROM node:24-alpine AS final
-
-RUN apk update && \
-    apk add tzdata ffmpeg bash openssl
-
-ENV TZ=America/Sao_Paulo
-ENV DOCKER_ENV=true
-
-WORKDIR /evolution
-
-COPY --from=builder /evolution/package.json ./package.json
-COPY --from=builder /evolution/package-lock.json ./package-lock.json
-
-COPY --from=builder /evolution/node_modules ./node_modules
-COPY --from=builder /evolution/dist ./dist
-COPY --from=builder /evolution/prisma ./prisma
-COPY --from=builder /evolution/manager ./manager
-COPY --from=builder /evolution/public ./public
-COPY --from=builder /evolution/.env ./.env
-COPY --from=builder /evolution/Docker ./Docker
-COPY --from=builder /evolution/runWithProvider.js ./runWithProvider.js
-COPY --from=builder /evolution/tsup.config.ts ./tsup.config.ts
-
-ENV DOCKER_ENV=true
-
+FROM node:22-bookworm-slim AS runtime
+LABEL org.opencontainers.image.title="Ceyteq API" \
+      org.opencontainers.image.vendor="Ceyteq (Ceylon Technology)" \
+      org.opencontainers.image.url="http://ceyteq.online/" \
+      org.opencontainers.image.authors="info.ceyteq@gmail.com"
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+ENV NODE_ENV=production DOCKER_ENV=true DATABASE_PROVIDER=mysql TZ=Asia/Colombo
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/Docker ./Docker
+COPY --from=builder /app/runWithProvider.js ./
 EXPOSE 8080
-
-ENTRYPOINT ["/bin/bash", "-c", ". ./Docker/scripts/deploy_database.sh && npm run start:prod" ]
+ENTRYPOINT ["bash", "./Docker/scripts/entrypoint.sh"]
+CMD ["node", "dist/main.js"]

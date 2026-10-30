@@ -1,7 +1,7 @@
 {
-  "name": "evolution-api",
+  "name": "ceyteq-api",
   "version": "2.3.7",
-  "description": "Rest api for communication with WhatsApp",
+  "description": "Ceyteq messaging and automation API",
   "main": "./dist/main.js",
   "type": "commonjs",
   "scripts": {
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EvolutionAPI/evolution-api.git"
+    "url": "git+https://github.com/infoceyteq-maker/ceyteqchartbot-.git"
   },
   "keywords": [
     "chat",
@@ -43,14 +43,15 @@
     "bot"
   ],
   "author": {
-    "name": "Davidson Gomes",
-    "email": "contato@evolution-api.com"
+    "name": "Ceyteq (Ceylon Technology)",
+    "email": "info.ceyteq@gmail.com",
+    "url": "http://ceyteq.online/"
   },
-  "license": "Apache-2.0",
+  "license": "SEE LICENSE IN LICENSE",
   "bugs": {
-    "url": "https://github.com/EvolutionAPI/evolution-api/issues"
+    "url": "https://github.com/infoceyteq-maker/ceyteqchartbot-/issues"
   },
-  "homepage": "https://github.com/EvolutionAPI/evolution-api#readme",
+  "homepage": "http://ceyteq.online/",
   "lint-staged": {
     "src/**/*.{ts,js}": [
       "eslint --fix"

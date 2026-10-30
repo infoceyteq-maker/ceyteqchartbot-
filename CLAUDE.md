@@ -1,13 +1,13 @@
 # CLAUDE.md
 
-This file provides comprehensive guidance to Claude AI when working with the Evolution API codebase.
+This file provides comprehensive guidance to Claude AI when working with the Ceyteq API codebase.
 
 ## Project Overview
 
-**Evolution API** is a powerful, production-ready REST API for WhatsApp communication that supports multiple WhatsApp providers:
+**Ceyteq API** is a powerful, production-ready REST API for WhatsApp communication that supports multiple WhatsApp providers:
 - **Baileys** (WhatsApp Web) - Open-source WhatsApp Web client
 - **Meta Business API** - Official WhatsApp Business API
-- **Evolution API** - Custom WhatsApp integration
+- **Legacy channel** - Custom WhatsApp integration (uses the existing `EVOLUTION` identifier)
 
 Built with **Node.js 20+**, **TypeScript 5+**, and **Express.js**, it provides extensive integrations with chatbots, CRM systems, and messaging platforms in a **multi-tenant architecture**.
 
@@ -67,7 +67,7 @@ npm test    # Run tests with watch mode
 ### Core Structure
 - **Multi-tenant SaaS**: Complete instance isolation with per-tenant authentication
 - **Multi-provider database**: PostgreSQL and MySQL via Prisma ORM with provider-specific schemas and migrations
-- **WhatsApp integrations**: Baileys, Meta Business API, and Evolution API with unified interface
+- **WhatsApp integrations**: Baileys, Meta Business API, and Ceyteq API with unified interface
 - **Event-driven architecture**: EventEmitter2 for internal events + WebSocket, RabbitMQ, SQS, NATS, Pusher for external events
 - **Microservices pattern**: Modular integrations for chatbots, storage, and external services
 
@@ -99,7 +99,7 @@ src/
 **Channel Integrations** (`src/api/integrations/channel/`):
 - **Baileys**: WhatsApp Web client with QR code authentication
 - **Business API**: Official Meta WhatsApp Business API
-- **Evolution API**: Custom WhatsApp integration
+- **Legacy channel**: Custom WhatsApp integration (uses the existing `EVOLUTION` identifier)
 - Connection lifecycle management per instance with automatic reconnection
 
 **Chatbot Integrations** (`src/api/integrations/chatbot/`):

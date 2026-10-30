@@ -742,147 +742,147 @@ export class EvolutionStartupService extends ChannelStartupService {
     );
   }
   public async locationMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async listMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async templateMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async contactMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async reactionMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async getBase64FromMediaMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async deleteMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async mediaSticker() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async pollMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async statusMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async reloadConnection() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async whatsappNumber() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async markMessageAsRead() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async archiveChat() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async markChatUnread() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async fetchProfile() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async offerCall() {
     throw new BadRequestException('Method not available on WhatsApp Business API');
   }
   public async sendPresence() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async setPresence() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async fetchPrivacySettings() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updatePrivacySettings() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async fetchBusinessProfile() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateProfileName() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateProfileStatus() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateProfilePicture() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async removeProfilePicture() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async blockUser() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateMessage() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async createGroup() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateGroupPicture() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateGroupSubject() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateGroupDescription() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async findGroup() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async fetchAllGroups() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async inviteCode() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async inviteInfo() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async sendInvite() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async acceptInviteCode() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async revokeInviteCode() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async findParticipants() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateGParticipant() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async updateGSetting() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async toggleEphemeral() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async leaveGroup() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async fetchLabels() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async handleLabel() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async receiveMobileCode() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
   public async fakeCall() {
-    throw new BadRequestException('Method not available on Evolution Channel');
+    throw new BadRequestException('Method not available on this channel');
   }
 }
