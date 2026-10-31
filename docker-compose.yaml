@@ -18,17 +18,12 @@ services:
     image: ceyteq-workspace:local
     build:
       context: ./frontend
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
     restart: unless-stopped
     depends_on:
       - api
     environment:
       CEYTEQ_API_URL: http://api:${SERVER_PORT:-${PORT:-8080}}
       CEYTEQ_SESSION_SECRET: ${CEYTEQ_SESSION_SECRET:?Set CEYTEQ_SESSION_SECRET in .env}
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
     ports:
       - "3000:3000"
 

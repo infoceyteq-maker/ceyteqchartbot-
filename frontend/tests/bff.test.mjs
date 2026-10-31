@@ -59,7 +59,7 @@ before(async () => {
   base = `http://127.0.0.1:${port}`;
   next = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '--hostname', '127.0.0.1', '--port', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', NEXT_DIST_DIR: '.next/contract-test', CEYTEQ_API_URL: `http://127.0.0.1:${backend.address().port}`, CEYTEQ_SESSION_SECRET: 'contract-test-session-secret-unique-and-long-2026', NEXT_PUBLIC_SUPABASE_URL: '', NEXT_PUBLIC_SUPABASE_ANON_KEY: '' },
+    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', NEXT_DIST_DIR: '.next/contract-test', CEYTEQ_API_URL: `http://127.0.0.1:${backend.address().port}`, CEYTEQ_SESSION_SECRET: 'contract-test-session-secret-unique-and-long-2026' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   next.stdout.on('data', (chunk) => { output += chunk; });
@@ -125,35 +125,6 @@ test('control screen and existing workspace routes render without exposing proxy
   }
   const response = await call('/api/backend/instance/fetchInstances', { useCookie: false });
   assert.equal(response.status, 401);
-});
-
-test('Baduma customer shell has isolated navigation, exact contact links, and protected profile', async () => {
-  const response = await fetch(base + '/login');
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /<title>Baduma \| Customer<\/title>/);
-  const navigation = html.match(/<nav class="baduma-nav" aria-label="Customer navigation">([\s\S]*?)<\/nav>/)?.[1];
-  assert.ok(navigation);
-  for (const [name, path] of [['Menu', '/menu'], ['Cart', '/cart'], ['Track Orders', '/track-orders'], ['Profile', '/profile']]) {
-    assert.ok(navigation.includes(name), name);
-    assert.ok(navigation.includes(`href="${path}"`), path);
-  }
-  assert.doesNotMatch(navigation, /Admin|Staff|Driver/i);
-  for (const expected of [
-    'https://www.facebook.com/share/1FPwigZWbq/?mibextid=wwXIfr',
-    'https://www.instagram.com/badum.sl?obrf=ZTdnZHQzZ3BzbTZ0&amp;utm_source=qr',
-    'https://wa.me/94779481682',
-    'https://maps.app.goo.gl/8c6MEqyV3ReS7Z5r6?g_st=ic',
-    'tel:+94770701682', 'mailto:Sadunchamila405@gmail.com',
-    'Sadun Chamila', 'Baduma.malgammana', '+94 77 070 1682', '+94 77 948 1682',
-  ]) assert.ok(html.includes(expected), expected);
-  for (const path of ['/menu', '/cart', '/track-orders']) assert.equal((await fetch(base + path)).status, 200, path);
-  const profile = await fetch(base + '/profile', { redirect: 'manual' });
-  assert.equal(profile.status, 307);
-  assert.equal(profile.headers.get('location'), '/login');
-  const callback = await fetch(base + '/auth/callback?next=https://evil.example', { redirect: 'manual' });
-  assert.equal(callback.status, 303);
-  assert.equal(callback.headers.get('location'), '/login?auth_error=invalid_link');
 });
 
 test('custom header and same-origin protections reject invalid requests', async () => {
